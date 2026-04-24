@@ -2,46 +2,42 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation'; // Tambahkan useRouter
+import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { getCurrentUser } from '@/actions/auth';
 import SettingsModal from './SettingsModal';
-
 import { 
-  LayoutDashboard, 
-  Users, 
-  UploadCloud, 
-  PieChart, 
-  Headphones, 
-  FileText, 
-  BadgeDollarSign, 
-  Settings2, 
-  Settings 
+  LayoutDashboard, Users, UploadCloud, PieChart, 
+  Headphones, FileText, BadgeDollarSign, Settings2, 
+  Settings, Menu, X 
 } from 'lucide-react';
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter(); // Inisialisasi router
+  const router = useRouter();
   
   const [userName, setUserName] = useState('Loading...');
   const [userPhoto, setUserPhoto] = useState<string | null>(null); 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // Ambil data user saat pertama kali load
   useEffect(() => {
     async function fetchUser() {
       const user = await getCurrentUser() as any; 
       if (user) {
         setUserName(user.full_name);
-        if (user.avatar_url) {
-          setUserPhoto(user.avatar_url);
-        }
+        if (user.avatar_url) setUserPhoto(user.avatar_url);
       } else {
         setUserName('Guest');
       }
     }
     fetchUser();
   }, []);
+
+  // Tutup sidebar otomatis pas ganti halaman
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [pathname]);
 
   const isAuthPage = pathname === '/login' || pathname === '/register';
   if (isAuthPage) return null;
@@ -58,37 +54,72 @@ export default function Sidebar() {
 
   return (
     <>
-      <aside className="hidden lg:flex w-[260px] h-screen bg-white flex-col shadow-[4px_0_24px_rgba(216,194,255,0.4)] z-20 sticky top-0 shrink-0">
+      {/* --- MOBILE TOP NAVIGATION (Hanya muncul di HP) --- */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-100 px-5 flex items-center justify-between z-[40]">
+        <div className="flex items-center gap-2">
+          <img src="/assets/keeva.png" alt="Logo" className="h-7 w-auto" />
+          <span className="font-bold text-gray-900 text-lg tracking-tight">Keeva</span>
+        </div>
+        <button 
+          onClick={() => setIsMobileOpen(true)}
+          className="p-2 text-gray-500 hover:bg-gray-50 rounded-xl"
+        >
+          <Menu size={24} />
+        </button>
+      </div>
+
+      {/* --- SIDEBAR DRAWER --- */}
+      {/* Overlay buat nutup sidebar pas di klik di luar menu (Mobile) */}
+      <div 
+        className={`fixed inset-0 bg-black/20 backdrop-blur-sm z-[50] transition-opacity lg:hidden ${
+          isMobileOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
+        }`}
+        onClick={() => setIsMobileOpen(false)}
+      />
+
+      <aside className={`
+        fixed inset-y-0 left-0 z-[60] w-[280px] bg-white flex flex-col shadow-2xl transition-transform duration-300 ease-in-out
+        lg:translate-x-0 lg:static lg:h-screen lg:shadow-[4px_0_24px_rgba(216,194,255,0.2)] lg:z-20
+        ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
+      `}>
         
-        {/* LOGO & NAV */}
+        {/* LOGO AREA */}
         <div className="p-7 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/assets/keeva.png" alt="Keeva Logo" className="h-8 w-auto object-contain drop-shadow-sm" />
+            <img src="/assets/keeva.png" alt="Keeva Logo" className="h-8 w-auto object-contain" />
             <span className="text-[22px] font-bold text-gray-900 tracking-tight">Keeva</span>
           </div>
-          {/* Bikin ikon atas juga bisa buka settings */}
-          <button onClick={() => setIsSettingsOpen(true)}>
-            <Settings2 size={20} className="text-gray-400 cursor-pointer hover:text-gray-600 transition" />
+          <button onClick={() => setIsMobileOpen(false)} className="lg:hidden p-2 text-gray-400">
+            <X size={20} />
           </button>
         </div>
 
+        {/* NAVIGATION LINKS */}
         <nav className="flex-1 px-4 py-2 space-y-1.5 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
             return (
-              <Link key={item.name} href={item.href} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${isActive ? 'bg-[#E5F1FF] text-blue-600 font-semibold' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700 font-medium'}`}>
-                <Icon size={20} className={isActive ? 'text-blue-500' : 'text-gray-400'} />
+              <Link 
+                key={item.name} 
+                href={item.href} 
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                  isActive 
+                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' 
+                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700 font-medium'
+                }`}
+              >
+                <Icon size={20} className={isActive ? 'text-white' : 'text-gray-400'} />
                 <span className="text-[14px]">{item.name}</span>
               </Link>
             );
           })}
         </nav>
 
-        {/* PROFILE BOTTOM */}
-        <div className="p-6 mt-auto flex items-center justify-between group">
+        {/* USER PROFILE BOTTOM */}
+        <div className="p-6 mt-auto border-t border-gray-50 flex items-center justify-between">
           <div className="flex items-center gap-3 max-w-[180px]">
-            <div className="w-10 h-10 rounded-full bg-[#f8f6ff] overflow-hidden border-2 border-white shadow-sm flex-shrink-0">
+            <div className="w-10 h-10 rounded-full bg-[#f8f6ff] overflow-hidden border-2 border-white shadow-sm shrink-0">
               <img 
                 src={userPhoto || `https://api.dicebear.com/7.x/initials/svg?seed=${userName}&backgroundColor=b599f6`} 
                 alt={userName} 
@@ -99,13 +130,13 @@ export default function Sidebar() {
               <span className="text-sm font-bold text-gray-900 leading-tight truncate">{userName}</span>
             </div>
           </div>
-          
-          <button onClick={() => setIsSettingsOpen(true)} className="p-2 rounded-lg text-gray-400 hover:bg-gray-50 hover:text-blue-500 transition-all flex-shrink-0">
+          <button onClick={() => setIsSettingsOpen(true)} className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 transition-all shrink-0">
             <Settings size={18} />
           </button>
         </div>
       </aside>
 
+      {/* SETTINGS MODAL */}
       <SettingsModal 
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)} 
@@ -113,8 +144,6 @@ export default function Sidebar() {
         onUpdateSuccess={(newName, newPhoto) => {
           if (newName) setUserName(newName);
           if (newPhoto) setUserPhoto(newPhoto);
-          
-          // PAKSA REFRESH: Agar data di Server Components (layout/page) sinkron
           router.refresh(); 
         }} 
       />
