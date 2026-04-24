@@ -77,7 +77,7 @@ export default function Sidebar() {
             </div>
             <div className="flex flex-col overflow-hidden">
               <span className="text-sm font-bold text-gray-900 leading-tight truncate">{userName}</span>
-              <span className="text-[11px] text-gray-400 font-medium">Admin</span>
+              {/* <span className="text-[11px] text-gray-400 font-medium">Admin</span> */}
             </div>
           </div>
           
