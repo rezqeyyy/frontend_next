@@ -3,6 +3,7 @@
 
 import { supabase } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
+import { redirect } from 'next/dist/client/components/navigation';
 import { cookies } from 'next/headers';
 
 // --- FUNGSI LOGIN ---
@@ -82,12 +83,18 @@ export async function getCurrentUser() {
 
   if (!userId) return null;
 
-  // Ambil data user dari Supabase berdasarkan ID di session
   const { data: user } = await supabase
     .from('users')
-    .select('full_name')
+    .select('full_name, avatar_url, email') 
     .eq('id', userId)
     .single();
 
   return user;
+}
+
+
+export async function signOut() {
+  const cookieStore = await cookies();
+  cookieStore.delete('user_session'); // Hapus cookie sesi
+  redirect('/login'); // Lempar ke halaman login
 }

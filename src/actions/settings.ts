@@ -7,41 +7,68 @@ import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 
 export async function updateSettings(formData: FormData) {
-  const cookieStore = await cookies();
-  const userId = cookieStore.get('user_session')?.value;
+  try {
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('user_session')?.value;
 
-  if (!userId) return { error: 'Sesi tidak valid, silakan login ulang.' };
+    console.log("Updating User ID:", userId);
 
-  const fullName = formData.get('full_name') as string;
-  const newPassword = formData.get('new_password') as string;
-  const language = formData.get('language') as string;
+    if (!userId) return { error: 'Sesi habis, silakan login ulang.' };
 
-  // 1. Set preferensi bahasa ke dalam Cookies
-  if (language) {
-    cookieStore.set('app_language', language, { path: '/', maxAge: 60 * 60 * 24 * 365 });
-  }
+    const fullName = formData.get('full_name') as string;
+    const email = formData.get('email') as string;
+    const newPassword = formData.get('new_password') as string;
+    const imageFile = formData.get('avatar') as File;
 
-  // 2. Siapkan data yang akan diupdate ke Supabase
-  const updates: any = {};
-  if (fullName) updates.full_name = fullName;
+    const updates: any = {};
+    if (fullName) updates.full_name = fullName;
+    if (email) updates.email = email;
 
-  // 3. Jika input password baru diisi, hash dengan bcrypt
-  if (newPassword && newPassword.trim() !== '') {
-    const salt = await bcrypt.genSalt(10);
-    updates.password_hash = await bcrypt.hash(newPassword, salt);
-  }
+    // 1. Logika Upload Foto
+    if (imageFile && imageFile.size > 0) {
+      const fileExt = imageFile.name.split('.').pop();
+      const fileName = `${userId}-${Date.now()}.${fileExt}`;
 
-  // 4. Update data ke tabel 'users'
-  if (Object.keys(updates).length > 0) {
-    const { error } = await supabase
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, imageFile);
+
+      if (uploadError) throw new Error('Gagal upload ke Storage: ' + uploadError.message);
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      updates.avatar_url = publicUrl;
+    }
+
+    // 2. Logika Hash Password
+    if (newPassword && newPassword.trim() !== '') {
+      const salt = await bcrypt.genSalt(10);
+      updates.password_hash = await bcrypt.hash(newPassword, salt);
+    }
+
+    // 3. Update Database
+    const { error: dbError } = await supabase
       .from('users')
       .update(updates)
-      .eq('id', userId);
+      .eq('id', userId)
+      .select();
 
-    if (error) return { error: error.message };
+    if (dbError) throw new Error('Gagal update Database: ' + dbError.message);
+
+    // Revalidate agar Next.js tahu data sudah berubah
+    revalidatePath('/', 'layout'); 
+    
+    // Kembalikan objek yang berisi data terbaru
+    return { 
+      success: true, 
+      newName: fullName, // Ambil dari variabel fullName di atas
+      newPhoto: updates.avatar_url // Ambil dari variabel updates jika ada
+    };
+    
+  } catch (err: any) {
+    console.error("DEBUG SETTINGS:", err.message);
+    return { error: err.message };
   }
-
-  // Refresh data di aplikasi agar nama baru langsung muncul
-  revalidatePath('/');
-  return { success: true, newName: fullName };
 }

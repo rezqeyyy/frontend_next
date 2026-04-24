@@ -2,25 +2,43 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation'; // Tambahkan useRouter
 import { useState, useEffect } from 'react';
 import { getCurrentUser } from '@/actions/auth';
 import SettingsModal from './SettingsModal';
 
-import { LayoutDashboard, Users, UploadCloud, PieChart, Headphones, FileText, BadgeDollarSign, Settings2, Settings } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  Users, 
+  UploadCloud, 
+  PieChart, 
+  Headphones, 
+  FileText, 
+  BadgeDollarSign, 
+  Settings2, 
+  Settings 
+} from 'lucide-react';
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter(); // Inisialisasi router
+  
   const [userName, setUserName] = useState('Loading...');
-  // Tambahkan state untuk menampung foto baru
   const [userPhoto, setUserPhoto] = useState<string | null>(null); 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
+  // Ambil data user saat pertama kali load
   useEffect(() => {
     async function fetchUser() {
-      const user = await getCurrentUser();
-      if (user && user.full_name) setUserName(user.full_name);
-      else setUserName('Guest');
+      const user = await getCurrentUser() as any; 
+      if (user) {
+        setUserName(user.full_name);
+        if (user.avatar_url) {
+          setUserPhoto(user.avatar_url);
+        }
+      } else {
+        setUserName('Guest');
+      }
     }
     fetchUser();
   }, []);
@@ -48,7 +66,10 @@ export default function Sidebar() {
             <img src="/assets/keeva.png" alt="Keeva Logo" className="h-8 w-auto object-contain drop-shadow-sm" />
             <span className="text-[22px] font-bold text-gray-900 tracking-tight">Keeva</span>
           </div>
-          <Settings2 size={20} className="text-gray-400 cursor-pointer hover:text-gray-600 transition" />
+          {/* Bikin ikon atas juga bisa buka settings */}
+          <button onClick={() => setIsSettingsOpen(true)}>
+            <Settings2 size={20} className="text-gray-400 cursor-pointer hover:text-gray-600 transition" />
+          </button>
         </div>
 
         <nav className="flex-1 px-4 py-2 space-y-1.5 overflow-y-auto">
@@ -68,7 +89,6 @@ export default function Sidebar() {
         <div className="p-6 mt-auto flex items-center justify-between group">
           <div className="flex items-center gap-3 max-w-[180px]">
             <div className="w-10 h-10 rounded-full bg-[#f8f6ff] overflow-hidden border-2 border-white shadow-sm flex-shrink-0">
-              {/* Tampilkan userPhoto jika ada, jika tidak pakai inisial huruf bawaan */}
               <img 
                 src={userPhoto || `https://api.dicebear.com/7.x/initials/svg?seed=${userName}&backgroundColor=b599f6`} 
                 alt={userName} 
@@ -77,7 +97,6 @@ export default function Sidebar() {
             </div>
             <div className="flex flex-col overflow-hidden">
               <span className="text-sm font-bold text-gray-900 leading-tight truncate">{userName}</span>
-              {/* <span className="text-[11px] text-gray-400 font-medium">Admin</span> */}
             </div>
           </div>
           
@@ -93,7 +112,10 @@ export default function Sidebar() {
         userName={userName}
         onUpdateSuccess={(newName, newPhoto) => {
           if (newName) setUserName(newName);
-          if (newPhoto) setUserPhoto(newPhoto); // <--- Terima foto baru dari Modal
+          if (newPhoto) setUserPhoto(newPhoto);
+          
+          // PAKSA REFRESH: Agar data di Server Components (layout/page) sinkron
+          router.refresh(); 
         }} 
       />
     </>
