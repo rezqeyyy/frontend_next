@@ -46,8 +46,7 @@ export default function Sidebar() {
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Customer List', href: '/customer-list', icon: Users },
     { name: 'Upload CSV', href: '/upload-csv', icon: UploadCloud },
-    { name: 'Prediction Results', href: '/prediction', icon: PieChart },
-    { name: 'Customer Segments', href: '/segments', icon: Headphones },
+    { name: 'Prediction Results', href: '/prediction-results', icon: PieChart },
     { name: 'Feature Importance', href: '/features', icon: FileText },
     { name: 'Revenue at Risk', href: '/revenue', icon: BadgeDollarSign },
   ];
