@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+/* Kalau mau nambahin warna atau font custom bawaan desain lu, masukinnya di sini sekarang */
+@theme {
+  --color-background: #F8F9FB;
+  --color-foreground: #111827;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}
