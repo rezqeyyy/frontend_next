@@ -4,6 +4,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ArrowUp, ArrowDown, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+// IMPORT KOMPONEN CHATBOT BARU DI SINI
+import InlineChat from '@/components/chat/InlineChat'; 
 
 export default function PredictionResultsPage() {
   const [customers, setCustomers] = useState<any[]>([]);
@@ -22,7 +24,7 @@ export default function PredictionResultsPage() {
     const { data, error } = await supabase
       .from('customers')
       .select('*')
-      .order('churn_risk_score', { ascending: false }) // Prioritas yang paling berisiko churn
+      .order('churn_risk_score', { ascending: false })
       .limit(5000);
 
     if (error) {
@@ -40,17 +42,15 @@ export default function PredictionResultsPage() {
   if (errorMsg) return <div className="p-4 sm:p-8 text-red-500">Error: {errorMsg}</div>;
 
   return (
-    // Penyesuaian padding top (pt-24) agar tidak tertutup navbar di mode HP
     <div className="p-4 pt-24 sm:p-6 sm:pt-28 lg:p-8 max-w-[1600px] mx-auto text-gray-800 w-full overflow-hidden">
       
-      {/* HEADER: Stack di HP, Row di Tablet/Desktop */}
+      {/* HEADER */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6 md:mb-8">
         <div className="w-full md:w-auto">
           <h1 className="text-[22px] md:text-[28px] font-bold text-gray-900 leading-tight">Prediction Results</h1>
           <p className="text-gray-400 mt-1 text-xs md:text-sm">AI-driven churn prediction and segmentation analysis</p>
         </div>
         
-        {/* Kontrol Pencarian & Filter: Full width di HP */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
           <div className="relative w-full sm:w-auto">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -66,7 +66,7 @@ export default function PredictionResultsPage() {
         </div>
       </header>
 
-      {/* KONTROL PAGINATION ATAS: Stack di HP */}
+      {/* KONTROL PAGINATION ATAS */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <span>Show</span>
@@ -91,9 +91,8 @@ export default function PredictionResultsPage() {
         </div>
       </div>
 
+      {/* AREA TABEL */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden w-full">
-        
-        {/* AREA TABEL: Scroll Horizontal */}
         <div className="overflow-x-auto p-4 md:p-5">
           <table className="w-full text-left text-sm min-w-[1200px]">
             <thead className="text-gray-500 border-b border-gray-100 bg-gray-50/30">
@@ -125,7 +124,7 @@ export default function PredictionResultsPage() {
           </table>
         </div>
 
-        {/* KONTROL PAGINATION BAWAH: Stack di HP */}
+        {/* KONTROL PAGINATION BAWAH */}
         {itemsPerPage !== 'all' && totalPages > 1 && (
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 md:px-5 py-4 border-t border-gray-50 bg-gray-50/50">
             <p className="text-xs md:text-sm text-gray-500 text-center sm:text-left">
@@ -153,11 +152,26 @@ export default function PredictionResultsPage() {
           </div>
         )}
       </div>
+
+      {/* === TAMBAHAN CHATBOT MULAI DARI SINI === */}
+      <div className="mt-10 lg:mt-14 w-full">
+        <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">
+          Tanya AI Assistant
+        </h2>
+        <p className="text-sm text-gray-500 mb-6">
+          Punya pertanyaan tentang data prediksi di atas? Diskusikan langsung dengan AI KEEVA di sini.
+        </p>
+        
+        {/* Panggil komponen Chat yang udah dibikin */}
+        <InlineChat />
+      </div>
+      {/* === TAMBAHAN CHATBOT SELESAI === */}
+
     </div>
   );
 }
 
-// Sub-komponen khusus halaman prediksi
+// Sub-komponen PredictionRow (Sama persis kayak sebelumnya)
 function PredictionRow({ no, data }: any) {
   const { 
     customer_id, 
