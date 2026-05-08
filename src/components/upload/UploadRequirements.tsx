@@ -12,7 +12,7 @@ export function UploadRequirements() {
       
       <ul className="space-y-3.5 mb-6">
         <RequirementItem text="First row must contain column headers" />
-        <RequirementItem text="Include customer ID, name, email, and relevant metrics" />
+        <RequirementItem text="Include customer ID and relevant metrics" />
         <RequirementItem text="Recommended columns: tenure, monthly_charges, total_charges, contract_type" />
         <RequirementItem text="Use comma (,) as delimiter" />
       </ul>

@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ArrowUp, ArrowDown, Search, Filter, ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import InlineChat from '@/components/chat/InlineChat'; 
+import { getCurrentUser } from '@/actions/auth'; 
 
 export default function PredictionResultsPage() {
   const [customers, setCustomers] = useState<any[]>([]);
@@ -41,18 +42,46 @@ export default function PredictionResultsPage() {
 
   const fetchResults = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('customers')
-      .select('*')
-      .order('churn_risk_score', { ascending: false })
-      .limit(5000);
+    setErrorMsg('');
 
-    if (error) {
-      setErrorMsg(error.message);
-    } else {
+    try {
+      const user = await getCurrentUser() as any;
+      if (!user || !user.id) {
+        setErrorMsg('Gagal verifikasi session. Silakan login ulang.');
+        setLoading(false);
+        return;
+      }
+
+      const { data: userDatasets, error: dsError } = await supabase
+        .from('datasets')
+        .select('id')
+        .eq('user_id', user.id);
+
+      if (dsError) throw dsError;
+
+      const datasetIds = userDatasets?.map(d => d.id) || [];
+
+      if (datasetIds.length === 0) {
+        setCustomers([]);
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .in('dataset_id', datasetIds) 
+        .order('churn_risk_score', { ascending: false })
+        .limit(5000);
+
+      if (error) throw error;
       setCustomers(data || []);
+
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Gagal menarik data prediksi.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const runPredictionSilent = async (customerData: any) => {
@@ -79,13 +108,13 @@ export default function PredictionResultsPage() {
           rank_level: newRank,
           revenue_at_risk: newRevenue,
         })
-        .eq('customer_id', customerData.customer_id);
+        .eq('id', customerData.id); // Pake ID unik database buat update biar akurat
 
       if (supabaseError) throw supabaseError;
       
       setCustomers((prevData) => {
         const updatedData = prevData.map((c) => 
-          c.customer_id === customerData.customer_id 
+          c.id === customerData.id 
             ? { ...c, churn_risk_score: newScore, rank_level: newRank, revenue_at_risk: newRevenue }
             : c
         );
@@ -95,7 +124,7 @@ export default function PredictionResultsPage() {
       return true;
 
     } catch (error) {
-      console.error(`Gagal auto-predict untuk ${customerData.customer_id}:`, error);
+      console.error(`Gagal auto-predict untuk ID: ${customerData.id}:`, error);
       return false; 
     }
   };
@@ -105,16 +134,23 @@ export default function PredictionResultsPage() {
 
     try {
       setPredictError(false);
+
+      const user = await getCurrentUser() as any;
+      if (!user || !user.id) return;
+
+      const { data: userDatasets } = await supabase.from('datasets').select('id').eq('user_id', user.id);
+      const datasetIds = userDatasets?.map(d => d.id) || [];
+      if (datasetIds.length === 0) return;
       
-      // 1. Ambil jumlah TOTAL semua data di database buat patokan akurat persentase
       const { count: totalDataCount, error: countError } = await supabase
         .from('customers')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .in('dataset_id', datasetIds); 
 
-      // 2. Ambil data yang sisa/belum diprediksi
       const { data: allUnpredicted, error } = await supabase
         .from('customers')
         .select('*')
+        .in('dataset_id', datasetIds) 
         .or('rank_level.is.null,rank_level.eq.-');
 
       if (error || countError) throw error || countError;
@@ -125,19 +161,16 @@ export default function PredictionResultsPage() {
       setIsPredicting(true);
 
       const total = totalDataCount || 1;
-      // Hitung data yang udah beres biar persenan nggak ngulang dari 0%
       let completed = total - allUnpredicted.length; 
       setPredictProgress(Math.round((completed / total) * 100));
 
-      // 3. Eksekusi sisanya
       for (let i = 0; i < allUnpredicted.length; i++) {
-        // Cek kalau tiba-tiba disuruh stop
         if (!isPredictingRef.current) break;
 
         const success = await runPredictionSilent(allUnpredicted[i]);
         
         if (!success) {
-          throw new Error(`Gagal memprediksi data ID: ${allUnpredicted[i].customer_id}`);
+          throw new Error(`Gagal memprediksi data dengan ID: ${allUnpredicted[i].id}`);
         }
         
         completed++;
@@ -145,7 +178,6 @@ export default function PredictionResultsPage() {
         setPredictProgress(currentPercentage);
       }
 
-      // Kalau sukses 100%
       if (isPredictingRef.current) {
         setTimeout(() => {
           setIsPredicting(false);
@@ -165,7 +197,7 @@ export default function PredictionResultsPage() {
   const totalPages = Math.ceil(customers.length / (itemsLimit || 1));
   const displayedData = customers.slice((currentPage - 1) * itemsLimit, currentPage * itemsLimit);
 
-  if (errorMsg) return <div className="p-4 sm:p-8 text-red-500">Error: {errorMsg}</div>;
+  if (errorMsg) return <div className="p-4 sm:p-8 text-red-500 font-medium">Error: {errorMsg}</div>;
 
   return (
     <div className="p-4 pt-24 sm:p-6 sm:pt-28 lg:p-8 max-w-[1600px] mx-auto text-gray-800 w-full overflow-hidden">
@@ -252,25 +284,24 @@ export default function PredictionResultsPage() {
                 <th className="py-3 font-medium">Customer ID</th>
                 <th className="py-3 font-medium text-center">Churn Risk Score</th>
                 <th className="py-3 font-medium text-center">Rank Level</th>
-                {/* <th className="py-3 font-medium text-center">Segment</th> */}
                 <th className="py-3 font-medium text-center">Revenue at Risk</th>
-                {/* <th className="py-3 font-medium text-center">Level Activity</th> */}
                 <th className="py-3 font-medium text-center">Action</th>
               </tr>
             </thead>
             <tbody className="text-gray-700">
               {loading ? (
-                <tr><td colSpan={8} className="py-8 text-center text-gray-400">Memuat data tabel...</td></tr>
+                <tr><td colSpan={6} className="py-8 text-center text-gray-400">Memuat data prediksi Anda...</td></tr>
               ) : displayedData.length > 0 ? (
                 displayedData.map((cust, idx) => (
                   <PredictionRow 
-                    key={cust.customer_id} 
+                    // FIX: Gunakan id database (UUID) atau gabungan index biar React gak rewel
+                    key={cust.id || `${cust.customer_id}-${idx}`} 
                     no={(currentPage - 1) * (itemsPerPage === 'all' ? customers.length : itemsPerPage) + idx + 1} 
                     data={cust} 
                   />
                 ))
               ) : (
-                <tr><td colSpan={8} className="py-8 text-center text-gray-400">Belum ada data.</td></tr>
+                <tr><td colSpan={6} className="py-8 text-center text-gray-400">Belum ada data untuk akun ini.</td></tr>
               )}
             </tbody>
           </table>
@@ -321,21 +352,13 @@ function PredictionRow({ no, data }: any) {
     customer_id, 
     churn_risk_score: score, 
     rank_level: rank, 
-    segment, 
-    revenue_at_risk, 
-    level_activity: activity 
+    revenue_at_risk
   } = data;
   
   const rankColors: any = { 
     High: 'bg-red-100 text-red-600', 
     Medium: 'bg-orange-100 text-orange-600', 
     Low: 'bg-green-100 text-green-600' 
-  };
-  
-  const segmentColors: any = { 
-    'All Risk User': 'bg-red-50 text-red-500', 
-    'Reguler User': 'bg-blue-50 text-blue-500', 
-    'Power User': 'bg-green-50 text-green-500' 
   };
 
   const barColor = score > 70 ? 'bg-red-500' : score > 40 ? 'bg-yellow-400' : 'bg-green-500';
@@ -358,17 +381,9 @@ function PredictionRow({ no, data }: any) {
           {rank ?? '-'}
         </span>
       </td>
-      {/* <td className="py-4 text-center">
-        <span className={`px-3 py-1 rounded-md text-[11px] font-semibold ${segmentColors[segment] || 'bg-gray-50 text-gray-500'}`}>
-          {segment ?? '-'}
-        </span>
-      </td> */}
       <td className="py-4 text-center font-semibold text-gray-800">
         ${revenue_at_risk?.toLocaleString() ?? '0'}
       </td>
-      {/* <td className="py-4 text-center text-gray-500">
-        {activity ?? '-'}
-      </td> */}
       <td className="py-4 text-center">
       </td>
     </tr>

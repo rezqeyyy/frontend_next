@@ -85,7 +85,7 @@ export async function getCurrentUser() {
 
   const { data: user } = await supabase
     .from('users')
-    .select('full_name, avatar_url, email') 
+    .select('id, full_name, avatar_url, email') 
     .eq('id', userId)
     .single();
 

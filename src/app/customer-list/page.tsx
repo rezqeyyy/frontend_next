@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Search, Filter, Trash2, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { getCurrentUser } from '@/actions/auth'; 
 
 export default function CustomerListPage() {
   const router = useRouter();
@@ -22,26 +23,57 @@ export default function CustomerListPage() {
 
   const fetchCustomers = async () => {
     setLoading(true);
-    // Mengambil data berdasarkan user yang login (RLS otomatis menangani ini)
-    const { data, error } = await supabase
-      .from('customers')
-      .select('*')
-      .order('customer_id', { ascending: true })
-      .limit(5000); 
+    setErrorMsg('');
 
-    if (error) {
-      setErrorMsg(error.message);
-    } else {
+    try {
+      // 1. Verifikasi User (Custom Auth)
+      const user = await getCurrentUser() as any;
+      if (!user || !user.id) {
+        setErrorMsg('Gagal verifikasi session. Silakan login ulang.');
+        setLoading(false);
+        return;
+      }
+
+      // 2. Cari semua folder (datasets) milik user ini
+      const { data: userDatasets, error: dsError } = await supabase
+        .from('datasets')
+        .select('id')
+        .eq('user_id', user.id);
+
+      if (dsError) throw dsError;
+
+      const datasetIds = userDatasets?.map(d => d.id) || [];
+
+      // Kalau user belum punya dataset sama sekali, langsung set kosong
+      if (datasetIds.length === 0) {
+        setCustomers([]);
+        setLoading(false);
+        return;
+      }
+
+      // 3. Tarik data pelanggan HANYA dari dataset milik user tersebut
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .in('dataset_id', datasetIds) // FILTER MANUAL PENGGANTI RLS
+        .order('customer_id', { ascending: true })
+        .limit(5000); 
+
+      if (error) throw error;
+      
       setCustomers(data || []);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Terjadi kesalahan saat mengambil data.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleDelete = async (customerId: string) => {
     const isConfirm = window.confirm(`Yakin ingin menghapus data pelanggan ${customerId}?`);
     if (!isConfirm) return;
 
-    // Menghapus menggunakan customer_id karena itu primary key kita sekarang
+    // Menghapus menggunakan customer_id
     const { error } = await supabase
       .from('customers')
       .delete()
@@ -63,7 +95,7 @@ export default function CustomerListPage() {
   const totalPages = Math.ceil(filteredCustomers.length / (itemsLimit || 1));
   const displayedData = filteredCustomers.slice((currentPage - 1) * itemsLimit, currentPage * itemsLimit);
 
-  if (errorMsg) return <div className="p-4 sm:p-8 text-red-500">Error: {errorMsg}</div>;
+  if (errorMsg) return <div className="p-4 sm:p-8 text-red-500 font-medium">Error: {errorMsg}</div>;
 
   return (
     <div className="p-4 pt-28 sm:p-6 sm:pt-24 lg:p-8 lg:pt-8 max-w-[1600px] mx-auto text-gray-800">
@@ -71,7 +103,7 @@ export default function CustomerListPage() {
       {/* HEADER */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6 md:mb-8">
         <div className="w-full md:w-auto">
-          <h1 className="text-[22px] md:text-[28px] font-bold text-gray-900 leading-tight">Customer List (Raw Data)</h1>
+          <h1 className="text-[22px] md:text-[28px] font-bold text-gray-900 leading-tight">Customer List (Private Data)</h1>
           <p className="text-gray-400 mt-1 text-xs md:text-sm">Manage your technical customer database metrics</p>
         </div>
         
@@ -142,7 +174,7 @@ export default function CustomerListPage() {
             </thead>
             <tbody className="text-gray-700">
               {loading ? (
-                <tr><td colSpan={11} className="py-8 text-center text-gray-400">Loading data...</td></tr>
+                <tr><td colSpan={11} className="py-8 text-center text-gray-400">Loading your data...</td></tr>
               ) : displayedData.length > 0 ? (
                 displayedData.map((cust, idx) => (
                   <tr key={cust.customer_id} className="border-b border-gray-50 hover:bg-gray-50/50">
@@ -175,7 +207,7 @@ export default function CustomerListPage() {
                   </tr>
                 ))
               ) : (
-                <tr><td colSpan={11} className="py-8 text-center text-gray-400">Belum ada data pelanggan.</td></tr>
+                <tr><td colSpan={11} className="py-8 text-center text-gray-400">Belum ada data pelanggan di akun ini. Silakan upload CSV.</td></tr>
               )}
             </tbody>
           </table>

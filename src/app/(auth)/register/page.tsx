@@ -11,7 +11,7 @@ import { registerUser } from '@/actions/auth';
 export default function RegisterPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+  const router = useRouter(); 
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -25,7 +25,7 @@ export default function RegisterPage() {
       setError(result.error);
       setIsLoading(false);
     } else if (result?.success) {
-      router.push('/'); // Ke Dashboard jika berhasil
+      window.location.href = '/login'; 
     }
   }
 

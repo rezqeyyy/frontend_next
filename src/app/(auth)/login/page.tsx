@@ -26,7 +26,7 @@ export default function LoginPage() {
       setError(result.error);
       setIsLoading(false);
     } else if (result?.success) {
-      router.push('/'); // Pindah ke Dashboard jika login sukses
+      window.location.href = '/dashboard'; 
     }
   }
 

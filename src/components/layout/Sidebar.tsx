@@ -39,11 +39,11 @@ export default function Sidebar() {
     setIsMobileOpen(false);
   }, [pathname]);
 
-  const isAuthPage = pathname === '/login' || pathname === '/register';
+  const isAuthPage = pathname === '/' || pathname === '/login' || pathname === '/register';
   if (isAuthPage) return null;
 
   const navItems = [
-    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Customer List', href: '/customer-list', icon: Users },
     { name: 'Upload CSV', href: '/upload-csv', icon: UploadCloud },
     { name: 'Prediction Results', href: '/prediction-results', icon: PieChart },

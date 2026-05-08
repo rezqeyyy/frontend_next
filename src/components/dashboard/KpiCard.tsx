@@ -1,23 +1,32 @@
-// src/components/dashboard/KpiCard.tsx
-import { KPIData } from '@/types';
-import { ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowUp, ArrowDown, LucideIcon } from 'lucide-react';
 
-export default function KpiCard({ data }: { data: KPIData }) {
+interface KpiCardProps {
+  title: string;
+  value: string;
+  trend: number;
+  isPositive: boolean;
+  color: 'red' | 'blue';
+  icon: LucideIcon;
+}
+
+export function KpiCard({ title, value, trend, isPositive, color, icon: Icon }: KpiCardProps) {
+  const borderColor = color === 'red' ? 'border-red-200' : 'border-blue-200';
+  const textColor = isPositive ? 'text-green-500' : 'text-red-500';
+  const iconColor = color === 'red' ? 'text-red-400' : 'text-blue-400';
+
   return (
-    <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex items-center space-x-4">
-      {/* Circle Placeholder */}
-      <div className="w-14 h-14 rounded-full border-2 border-blue-100 flex-shrink-0" />
-      
-      <div>
-        <h3 className="text-sm text-gray-500 font-medium">{data.title}</h3>
-        <p className="text-2xl font-bold mt-1">{data.value}</p>
-        <div className="flex items-center space-x-1 mt-1 text-xs">
-          {data.isPositive ? (
-            <span className="flex items-center text-green-500"><ArrowUp size={12} /> {data.trend}%</span>
-          ) : (
-             <span className="flex items-center text-red-500"><ArrowDown size={12} /> {data.trend}%</span>
-          )}
-          <span className="text-gray-400">{data.timeframe}</span>
+    <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 hover:shadow-md transition">
+      <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full border-[3px] ${borderColor} flex items-center justify-center flex-shrink-0`}>
+        <Icon size={24} className={iconColor} />
+      </div>
+      <div className="min-w-0">
+        <h3 className="text-[13px] text-gray-500 font-medium truncate">{title}</h3>
+        <p className="text-xl sm:text-2xl font-bold text-gray-900">{value}</p>
+        <div className="flex items-center gap-1 text-[11px] font-medium truncate">
+          <span className={`flex items-center ${textColor}`}>
+            {isPositive ? <ArrowUp size={12} /> : <ArrowDown size={12} />} {trend}%
+          </span>
+          <span className="text-gray-400 hidden sm:inline">last 30 days</span>
         </div>
       </div>
     </div>
