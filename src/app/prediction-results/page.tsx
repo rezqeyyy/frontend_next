@@ -1,10 +1,9 @@
 // src/app/prediction-results/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { ArrowUp, ArrowDown, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
-// IMPORT KOMPONEN CHATBOT BARU DI SINI
+import { ArrowUp, ArrowDown, Search, Filter, ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import InlineChat from '@/components/chat/InlineChat'; 
 
 export default function PredictionResultsPage() {
@@ -15,9 +14,30 @@ export default function PredictionResultsPage() {
   const [itemsPerPage, setItemsPerPage] = useState<number | 'all'>(10);
   const [currentPage, setCurrentPage] = useState(1);
 
+  // State untuk Progress Bar & Error Handling
+  const [isPredicting, setIsPredicting] = useState(false);
+  const [predictProgress, setPredictProgress] = useState(0);
+  const [predictError, setPredictError] = useState(false);
+  
+  const isPredictingRef = useRef(false);
+
   useEffect(() => {
     fetchResults();
-  }, []);
+    autoPredictAllDatabase();
+
+    // SENSOR BANGUN TIDUR: Jalanin ulang kalau user balik ke tab ini dan proses sempet mati
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        if (!isPredictingRef.current && !predictError) {
+          autoPredictAllDatabase();
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [predictError]);
 
   const fetchResults = async () => {
     setLoading(true);
@@ -33,6 +53,112 @@ export default function PredictionResultsPage() {
       setCustomers(data || []);
     }
     setLoading(false);
+  };
+
+  const runPredictionSilent = async (customerData: any) => {
+    try {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      
+      const response = await fetch(`${API_URL}/predict`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(customerData), 
+      });
+
+      if (!response.ok) return false;
+      const predictionResult = await response.json();
+
+      const newScore = Math.round(predictionResult.risk_score);
+      const newRank = predictionResult.risk_category;
+      const newRevenue = Math.round(predictionResult.revenue_at_risk);
+
+      const { error: supabaseError } = await supabase
+        .from('customers')
+        .update({
+          churn_risk_score: newScore,
+          rank_level: newRank,
+          revenue_at_risk: newRevenue,
+        })
+        .eq('customer_id', customerData.customer_id);
+
+      if (supabaseError) throw supabaseError;
+      
+      setCustomers((prevData) => {
+        const updatedData = prevData.map((c) => 
+          c.customer_id === customerData.customer_id 
+            ? { ...c, churn_risk_score: newScore, rank_level: newRank, revenue_at_risk: newRevenue }
+            : c
+        );
+        return updatedData.sort((a, b) => (b.churn_risk_score || 0) - (a.churn_risk_score || 0));
+      });
+
+      return true;
+
+    } catch (error) {
+      console.error(`Gagal auto-predict untuk ${customerData.customer_id}:`, error);
+      return false; 
+    }
+  };
+
+  const autoPredictAllDatabase = async () => {
+    if (isPredictingRef.current) return; 
+
+    try {
+      setPredictError(false);
+      
+      // 1. Ambil jumlah TOTAL semua data di database buat patokan akurat persentase
+      const { count: totalDataCount, error: countError } = await supabase
+        .from('customers')
+        .select('*', { count: 'exact', head: true });
+
+      // 2. Ambil data yang sisa/belum diprediksi
+      const { data: allUnpredicted, error } = await supabase
+        .from('customers')
+        .select('*')
+        .or('rank_level.is.null,rank_level.eq.-');
+
+      if (error || countError) throw error || countError;
+      
+      if (!allUnpredicted || allUnpredicted.length === 0) return;
+
+      isPredictingRef.current = true;
+      setIsPredicting(true);
+
+      const total = totalDataCount || 1;
+      // Hitung data yang udah beres biar persenan nggak ngulang dari 0%
+      let completed = total - allUnpredicted.length; 
+      setPredictProgress(Math.round((completed / total) * 100));
+
+      // 3. Eksekusi sisanya
+      for (let i = 0; i < allUnpredicted.length; i++) {
+        // Cek kalau tiba-tiba disuruh stop
+        if (!isPredictingRef.current) break;
+
+        const success = await runPredictionSilent(allUnpredicted[i]);
+        
+        if (!success) {
+          throw new Error(`Gagal memprediksi data ID: ${allUnpredicted[i].customer_id}`);
+        }
+        
+        completed++;
+        const currentPercentage = Math.round((completed / total) * 100);
+        setPredictProgress(currentPercentage);
+      }
+
+      // Kalau sukses 100%
+      if (isPredictingRef.current) {
+        setTimeout(() => {
+          setIsPredicting(false);
+          isPredictingRef.current = false;
+          fetchResults();
+        }, 1000);
+      }
+
+    } catch (err) {
+      console.error("Error saat mass predict:", err);
+      setPredictError(true); 
+      isPredictingRef.current = false;
+    }
   };
 
   const itemsLimit = itemsPerPage === 'all' ? customers.length : itemsPerPage;
@@ -65,6 +191,31 @@ export default function PredictionResultsPage() {
           </button>
         </div>
       </header>
+
+      {/* TAMPILAN PROGRESS BAR */}
+      {isPredicting && (
+        <div className={`mb-6 border rounded-xl p-4 flex flex-col gap-3 transition-colors ${predictError ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-100'}`}>
+          <div className={`flex justify-between items-center text-sm font-medium ${predictError ? 'text-red-800' : 'text-blue-800'}`}>
+            <span className="flex items-center gap-2">
+              {predictError ? (
+                <AlertCircle size={16} className="text-red-600" />
+              ) : (
+                <Loader2 size={16} className="animate-spin text-blue-600" />
+              )}
+              {predictError 
+                ? "Gagal memprediksi sisa data. Cek koneksi backend atau console." 
+                : "Sedang memprediksi sisa data otomatis... (Bisa ditinggal pindah tab)"}
+            </span>
+            <span>{predictProgress}%</span>
+          </div>
+          <div className={`w-full h-2 rounded-full overflow-hidden ${predictError ? 'bg-red-200' : 'bg-blue-200'}`}>
+            <div 
+              className={`h-full transition-all duration-300 ease-out ${predictError ? 'bg-red-600' : 'bg-blue-600'}`}
+              style={{ width: `${predictProgress}%` }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* KONTROL PAGINATION ATAS */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
@@ -101,24 +252,25 @@ export default function PredictionResultsPage() {
                 <th className="py-3 font-medium">Customer ID</th>
                 <th className="py-3 font-medium text-center">Churn Risk Score</th>
                 <th className="py-3 font-medium text-center">Rank Level</th>
-                <th className="py-3 font-medium text-center">Segment</th>
+                {/* <th className="py-3 font-medium text-center">Segment</th> */}
                 <th className="py-3 font-medium text-center">Revenue at Risk</th>
-                <th className="py-3 font-medium text-center">Level Activity</th>
+                {/* <th className="py-3 font-medium text-center">Level Activity</th> */}
+                <th className="py-3 font-medium text-center">Action</th>
               </tr>
             </thead>
             <tbody className="text-gray-700">
               {loading ? (
-                <tr><td colSpan={7} className="py-8 text-center text-gray-400">Loading predictions...</td></tr>
+                <tr><td colSpan={8} className="py-8 text-center text-gray-400">Memuat data tabel...</td></tr>
               ) : displayedData.length > 0 ? (
                 displayedData.map((cust, idx) => (
                   <PredictionRow 
-                    key={cust.id} 
+                    key={cust.customer_id} 
                     no={(currentPage - 1) * (itemsPerPage === 'all' ? customers.length : itemsPerPage) + idx + 1} 
                     data={cust} 
                   />
                 ))
               ) : (
-                <tr><td colSpan={7} className="py-8 text-center text-gray-400">Belum ada hasil prediksi.</td></tr>
+                <tr><td colSpan={8} className="py-8 text-center text-gray-400">Belum ada data.</td></tr>
               )}
             </tbody>
           </table>
@@ -153,25 +305,17 @@ export default function PredictionResultsPage() {
         )}
       </div>
 
-      {/* === TAMBAHAN CHATBOT MULAI DARI SINI === */}
       <div className="mt-10 lg:mt-14 w-full">
-        <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">
-          Tanya AI Assistant
-        </h2>
-        <p className="text-sm text-gray-500 mb-6">
-          Punya pertanyaan tentang data prediksi di atas? Diskusikan langsung dengan AI KEEVA di sini.
-        </p>
-        
-        {/* Panggil komponen Chat yang udah dibikin */}
+        <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">Tanya AI Assistant</h2>
+        <p className="text-sm text-gray-500 mb-6">Punya pertanyaan tentang data prediksi di atas? Diskusikan langsung dengan AI KEEVA di sini.</p>
         <InlineChat />
       </div>
-      {/* === TAMBAHAN CHATBOT SELESAI === */}
 
     </div>
   );
 }
 
-// Sub-komponen PredictionRow (Sama persis kayak sebelumnya)
+// Sub-komponen PredictionRow
 function PredictionRow({ no, data }: any) {
   const { 
     customer_id, 
@@ -214,16 +358,18 @@ function PredictionRow({ no, data }: any) {
           {rank ?? '-'}
         </span>
       </td>
-      <td className="py-4 text-center">
+      {/* <td className="py-4 text-center">
         <span className={`px-3 py-1 rounded-md text-[11px] font-semibold ${segmentColors[segment] || 'bg-gray-50 text-gray-500'}`}>
           {segment ?? '-'}
         </span>
-      </td>
+      </td> */}
       <td className="py-4 text-center font-semibold text-gray-800">
         ${revenue_at_risk?.toLocaleString() ?? '0'}
       </td>
-      <td className="py-4 text-center text-gray-500">
+      {/* <td className="py-4 text-center text-gray-500">
         {activity ?? '-'}
+      </td> */}
+      <td className="py-4 text-center">
       </td>
     </tr>
   );
