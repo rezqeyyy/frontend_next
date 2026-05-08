@@ -9,37 +9,46 @@ export function useCsvUpload() {
     const [message, setMessage] = useState('');
 
     const parseAndUpload = async (file: File) => {
-        // Ambil ID user yang login
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-            alert("Login dulu bro!");
-            return;
-        }
+        setIsUploading(true);
+        try {
+            // 1. Buat record Dataset (Brankas) baru
+            const { data: dataset, error: dsError } = await supabase
+            .from('datasets')
+            .insert([{ filename: file.name }])
+            .select()
+            .single();
 
-        Papa.parse(file, {
+            if (dsError) throw dsError;
+
+            // 2. Parse CSV dan masukkan dataset_id ke tiap baris
+            Papa.parse(file, {
             header: true,
+            skipEmptyLines: true,
             transformHeader: (h) => h.trim().toLowerCase().replace(/\s+/g, '_'),
             complete: async (results) => {
-            const formattedData = results.data
+                const formattedData = results.data
                 .filter((row: any) => row.customer_id)
                 .map((row: any) => ({
-                ...row, // Ambil semua kolom dari CSV
-                user_id: user.id, // <--- WAJIB ADA BIAR GAK ERROR RLS
-                churn_risk_score: 0,
-                rank_level: '-',
-                segment: '-',
-                revenue_at_risk: 0
+                    ...row,
+                    dataset_id: dataset.id, // <--- Link ke brankas, bukan login ID
+                    churn_risk_score: 0,
+                    rank_level: '-',
+                    revenue_at_risk: 0
                 }));
 
-            // Kirim ke database
-            const { error } = await supabase.from('customers').upsert(formattedData);
-            
-            if (error) console.error("Gagal upload:", error.message);
-            else alert("Data berhasil masuk ke akun lu!");
+                // 3. Upsert ke tabel customers
+                const { error: uploadError } = await supabase.from('customers').insert(formattedData);
+                
+                if (uploadError) throw uploadError;
+                alert("Dataset berhasil diupload secara private!");
             }
-        });
-    };
+            });
+        } catch (err: any) {
+            alert(err.message);
+        } finally {
+            setIsUploading(false);
+        }
+        };
 
     return { isUploading, status, message, parseAndUpload };
 }
