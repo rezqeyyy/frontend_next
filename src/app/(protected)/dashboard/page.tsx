@@ -1,43 +1,72 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link'; // Import Link buat navigasi antar page
-import { 
-  ArrowUp, 
-  User, 
-  UserX, 
-  DollarSign, 
-  Gauge, 
-  LogOut, 
-  HelpCircle, 
-  AlertTriangle 
+import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import {
+  ArrowUp,
+  User,
+  UserX,
+  DollarSign,
+  Gauge,
+  LogOut,
+  HelpCircle,
+  AlertTriangle,
+  Loader2,
+  AlertCircle,
+  Activity,
+  CreditCard,
+  MessageSquare,
+  Calendar,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 // Import Komponen Clean Code
 import { KpiCard } from '@/components/dashboard/KpiCard';
-import { TableRow } from '@/components/dashboard/TableRow';
 import { AlertItem } from '@/components/dashboard/AlertItem';
 import { FilterDropdown } from '@/components/dashboard/FilterDropdown';
-import { useDashboardStats } from '@/hooks/useDashboardStats';
 import ChurnRiskChart from '@/components/dashboard/ChurnRiskChart';
+import CustomerPriorityList from '@/components/dashboard/CustomerPriorityList';
+
+// Import Server Action buat ambil data statistik Real-time
+import { fetchDashboardStats } from '@/actions/dashboard';
 
 export default function DashboardPage() {
   const [currentTime, setCurrentTime] = useState<string>('Memuat waktu...');
   const [mounted, setMounted] = useState(false);
+  
+  // State untuk Statistik KPI & Alerts
+  const [stats, setStats] = useState<any>(null);
+  const [loadingStats, setLoadingStats] = useState(true);
 
   useEffect(() => {
     setMounted(true);
+    
+    // 1. Fungsi Ngambil Data Real-time
+    const loadStats = async () => {
+      setLoadingStats(true);
+      const data = await fetchDashboardStats();
+      if (!data.error) {
+        setStats(data);
+      } else {
+        console.error("Gagal load dashboard stats:", data.error);
+      }
+      setLoadingStats(false);
+    };
+
+    // 2. Fungsi Update Waktu
     const updateTime = () => {
       const now = new Date();
       const hours = now.getHours().toString().padStart(2, '0');
       const minutes = now.getMinutes().toString().padStart(2, '0');
       const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
       const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-      
       setCurrentTime(`${hours}.${minutes} | ${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`);
     };
 
     updateTime();
+    loadStats(); // Tarik data pas page dibuka
     const timer = setInterval(updateTime, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -48,7 +77,7 @@ export default function DashboardPage() {
       {/* HEADER */}
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6">
         <div>
-          <h1 className="text-2xl sm:text-[28px] font-bold text-gray-900 leading-tight">Customer Churn</h1>
+          <h1 className="text-2xl sm:text-[28px] font-bold text-gray-900 leading-tight">Customer Churn Dashboard</h1>
           <p className="text-gray-400 mt-1 text-sm">Real time prediction churn for users</p>
         </div>
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
@@ -59,83 +88,75 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* KPI CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mb-5">
-        <KpiCard title="Total Customer" value="3000" trend={8} isPositive={true} color="blue" icon={User} />
-        <KpiCard title="High Risk Customer" value="30" trend={8} isPositive={true} color="red" icon={UserX} />
-        <KpiCard title="Revenue at Risk" value="$284,000" trend={10.2} isPositive={true} color="red" icon={DollarSign} />
-        <KpiCard title="Avg. Churn Risk Score" value="300" trend={8} isPositive={false} color="blue" icon={Gauge} />
+      {/* KPI CARDS (DAPET DATA REAL-TIME) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mb-5 min-h-[140px]">
+        {loadingStats ? (
+          <div className="col-span-full flex items-center justify-center bg-white p-6 rounded-2xl border border-gray-100 shadow-sm gap-2 text-gray-400">
+             <Loader2 size={18} className="animate-spin" /> Menghitung statistik...
+          </div>
+        ) : (
+          <>
+            <KpiCard title="Total Customer" value={stats?.totalActiveCustomers?.toLocaleString() || "0"} trend={8} isPositive={true} color="blue" icon={User} />
+            <KpiCard title="High Risk Customer" value={stats?.totalHighRisk?.toLocaleString() || "0"} trend={8} isPositive={false} color="red" icon={UserX} />
+            <KpiCard title="Revenue at Risk" value={`$${stats?.revenueAtRisk?.toLocaleString() || "0"}`} trend={10.2} isPositive={false} color="red" icon={DollarSign} />
+            <KpiCard title="Avg. Churn Risk Score" value={`${stats?.avgChurnScore || 0}%`} trend={8} isPositive={false} color="blue" icon={Gauge} />
+          </>
+        )}
       </div>
 
       <div className="flex flex-col lg:flex-row gap-5">
         <div className="w-full lg:flex-1 flex flex-col gap-5">
           {/* Charts Row Placeholder */}
           <div className="flex flex-col xl:flex-row gap-5">
-            <DashboardSection title="Churn Risk Trend" chartType="Line Chart" />
+            <DashboardSection title="Churn Risk Trend" chartType="Line Chart" data={stats?.chartData} />
             <DashboardSection title="Risk Distribution" chartType="Donut Chart" className="xl:w-[320px]" />
           </div>
 
-          {/* Customer Table */}
-          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-100 shadow-sm">
-            <SectionHeader title="Customer Priority List" linkText="View all" />
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="text-gray-500 border-b border-gray-100">
-                  <tr>
-                    <th className="pb-3 font-medium px-2">#</th>
-                    <th className="pb-3 font-medium">Customer</th>
-                    <th className="pb-3 font-medium">Risk Score</th>
-                    <th className="pb-3 font-medium">Rank</th>
-                    <th className="pb-3 font-medium">Segment</th>
-                    <th className="pb-3 font-medium">Revenue</th>
-                    <th className="pb-3 font-medium">Activity</th>
-                    <th className="pb-3 font-medium text-center">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="text-gray-700">
-                  <TableRow no={1} name="Tatang Suretang" score={82} rank="High" segment="All Risk User" revenue="$284,000" activity="5 days ago" />
-                  <TableRow no={2} name="Asep Knalpot" score={65} rank="Medium" segment="Reguler User" revenue="$120,000" activity="2 days ago" />
-                  <TableRow no={3} name="Ujang Racing" score={35} rank="Low" segment="Power User" revenue="$90,000" activity="1 day ago" />
-                </tbody>
-              </table>
-            </div>
-          </div>
+          {/* CUSTOMER PRIORITY LIST (DINAMIS & BISA KLIK VIEW) */}
+          <CustomerPriorityList />
 
-          {/* Factors Section */}
+          {/* Factors Section (METRIK BERAGAM) */}
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
             <SectionHeader title="Why Customers Are At Risk?" subtitle="Top factors contributing to churn" linkText="Chat Bot" />
-            <div className="flex items-center gap-6 overflow-x-auto pb-2 scrollbar-hide">
-              {[...Array(5)].map((_, i) => (
-                <FactorItem key={i} label="Rarely login" value="30%" />
-              ))}
+            <div className="flex items-center gap-6 overflow-x-auto pb-2 custom-scrollbar">
+              <FactorItem icon={AlertCircle} label="High Tickets" value="35%" color="text-red-500" bg="bg-red-50/50" border="border-red-200" />
+              <FactorItem icon={LogOut} label="Rarely Login" value="28%" color="text-orange-500" bg="bg-orange-50/50" border="border-orange-200" />
+              <FactorItem icon={Activity} label="Low Usage" value="24%" color="text-yellow-500" bg="bg-yellow-50/50" border="border-yellow-200" />
+              <FactorItem icon={CreditCard} label="Payment Issue" value="15%" color="text-purple-500" bg="bg-purple-50/50" border="border-purple-200" />
+              <FactorItem icon={MessageSquare} label="Low NPS" value="12%" color="text-blue-500" bg="bg-blue-50/50" border="border-blue-200" />
             </div>
           </div>
         </div>
 
         {/* RIGHT COLUMN */}
         <div className="w-full lg:w-[320px] flex flex-col gap-5">
+          
+          {/* ALERTS SECTION (SEKARANG DINAMIS) */}
           <div className="flex-1 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
             <SectionHeader title="Alerts" linkText="View all" />
             <div className="flex flex-col gap-3">
-              <AlertItem type="danger" title="Customer Churn" desc="Real time prediction churn for users" time="3m ago" />
-              <AlertItem type="warning" title="Activity Drop" desc="Drop 45%" time="3m ago" />
-              <AlertItem type="info" title="No login" desc="Real time prediction churn for users" time="3m ago" />
+              {loadingStats ? (
+                <div className="flex items-center justify-center p-6 text-gray-400 text-sm">
+                  <Loader2 size={16} className="animate-spin mr-2" /> Mengecek sistem...
+                </div>
+              ) : stats?.alerts?.length > 0 ? (
+                stats.alerts.map((alert: any, idx: number) => (
+                  <AlertItem 
+                    key={idx} 
+                    type={alert.type} 
+                    title={alert.title} 
+                    desc={alert.desc} 
+                    time={alert.time} 
+                  />
+                ))
+              ) : (
+                <div className="text-sm text-gray-500 text-center py-4">Belum ada peringatan aktivitas.</div>
+              )}
             </div>
           </div>
           
-          {/* UPDATE: Sekarang lu bisa masukin link tujuan di properti 'href' */}
-          <InsightCard 
-            title="AI Insight" 
-            icon={HelpCircle} 
-            desc="70% dari pelanggan beresiko tinggi mengalami penurunan aktivitas dalam 2 minggu terakhir." 
-            href="/prediction-results" 
-          />
-          <InsightCard 
-            title="Top Recommendation" 
-            icon={AlertTriangle} 
-            desc="Prioritaskan outreach ke 312 pelanggan beresiko tinggi dengan onboarding ulang." 
-            href="/customer-list" 
-          />
+          <InsightCard title="AI Insight" icon={HelpCircle} desc="70% dari pelanggan beresiko tinggi mengalami penurunan aktivitas dalam 2 minggu terakhir." href="/prediction-results" />
+          <InsightCard title="Top Recommendation" icon={AlertTriangle} desc="Prioritaskan outreach ke 312 pelanggan beresiko tinggi dengan onboarding ulang." href="/customer-list" />
         </div>
       </div>
     </div>
@@ -157,7 +178,6 @@ function SectionHeader({ title, subtitle, linkText }: any) {
   );
 }
 
-// UPDATE: Ditambah prop 'href' dan dibungkus komponen <Link>
 function InsightCard({ title, icon: Icon, desc, href }: any) {
   return (
     <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
@@ -166,8 +186,6 @@ function InsightCard({ title, icon: Icon, desc, href }: any) {
         <h3 className="font-bold text-gray-900 mt-1">{title}</h3>
       </div>
       <p className="text-[13px] text-gray-500 leading-relaxed mb-4">{desc}</p>
-      
-      {/* Tombol dibungkus Link agar navigasi ke page tujuan jalan */}
       <Link href={href || "#"}>
         <button className="w-full border border-blue-500 text-blue-500 py-2 rounded-xl text-sm font-semibold hover:bg-blue-50 transition">
             View Details
@@ -177,10 +195,12 @@ function InsightCard({ title, icon: Icon, desc, href }: any) {
   );
 }
 
-function FactorItem({ label, value }: any) {
+function FactorItem({ label, value, icon: Icon, color, bg, border }: any) {
   return (
-    <div className="flex items-center gap-4 min-w-[160px] flex-shrink-0">
-      <div className="w-12 h-12 rounded-full border-2 border-blue-200 bg-blue-50/20 flex items-center justify-center text-blue-500"><LogOut size={20} /></div>
+    <div className="flex items-center gap-4 min-w-[180px] flex-shrink-0">
+      <div className={`w-12 h-12 rounded-full border-2 ${border} ${bg} flex items-center justify-center ${color}`}>
+        <Icon size={20} />
+      </div>
       <div className="flex flex-col">
         <span className="text-[11px] text-gray-500 uppercase font-bold tracking-wider">{label}</span>
         <span className="text-xl font-bold text-gray-800 leading-tight">{value}</span>
@@ -189,19 +209,204 @@ function FactorItem({ label, value }: any) {
   );
 }
 
-function DashboardSection({ title, chartType, data, className = "" }: any) { // 1. Tambah 'data' di sini
+// Convert "YYYY-MM" -> "May 2024"
+const MONTH_ABBR_LABEL = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function formatMonthLabel(key: string) {
+  const [y, m] = key.split('-');
+  const idx = parseInt(m, 10) - 1;
+  if (!y || isNaN(idx) || idx < 0 || idx > 11) return key;
+  return `${MONTH_ABBR_LABEL[idx]} ${y}`;
+}
+
+// Calendar-style month/year picker (tanpa nambah file baru)
+function MonthYearPicker({
+  value,
+  onChange,
+  availableMonths,
+  align = 'right',
+  ariaLabel,
+}: {
+  value: string;
+  onChange: (key: string) => void;
+  availableMonths: Set<string>;
+  align?: 'left' | 'right';
+  ariaLabel?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // Year yang lagi dilihat di kalender (bukan year value-nya)
+  const initialYear = (() => {
+    const y = parseInt(value?.split('-')[0] || '', 10);
+    return isNaN(y) ? new Date().getFullYear() : y;
+  })();
+  const [viewYear, setViewYear] = useState(initialYear);
+
+  // Hitung range tahun yang ada di data
+  const yearsAvailable = Array.from(availableMonths).map((m) => parseInt(m.split('-')[0], 10));
+  const minYear = yearsAvailable.length ? Math.min(...yearsAvailable) : initialYear;
+  const maxYear = yearsAvailable.length ? Math.max(...yearsAvailable) : initialYear;
+
+  // Sync view year sama value pas value berubah dari luar
+  useEffect(() => {
+    const y = parseInt(value?.split('-')[0] || '', 10);
+    if (!isNaN(y)) setViewYear(y);
+  }, [value]);
+
+  // Click outside buat nutup popover
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const isDisabled = availableMonths.size === 0;
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <button
+        type="button"
+        onClick={() => !isDisabled && setOpen((o) => !o)}
+        disabled={isDisabled}
+        aria-label={ariaLabel}
+        className={`text-xs border rounded-md px-2.5 py-1.5 bg-white outline-none transition font-medium shadow-sm flex items-center gap-1.5 ${
+          isDisabled
+            ? 'border-gray-100 text-gray-300 cursor-not-allowed'
+            : open
+            ? 'border-blue-400 text-blue-600'
+            : 'border-gray-200 text-gray-600 hover:border-blue-400 cursor-pointer'
+        }`}
+      >
+        <Calendar size={12} />
+        <span>{value ? formatMonthLabel(value) : '—'}</span>
+        <ChevronDown size={12} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div
+          className={`absolute top-full mt-2 w-[260px] bg-white rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.12)] border border-gray-100 p-4 z-50 ${
+            align === 'right' ? 'right-0' : 'left-0'
+          }`}
+        >
+          {/* Header: tombol prev/next year */}
+          <div className="flex items-center justify-between mb-4">
+            <button
+              type="button"
+              onClick={() => setViewYear((y) => Math.max(minYear, y - 1))}
+              disabled={viewYear <= minYear}
+              className="p-1.5 rounded-md text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              aria-label="Previous year"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <span className="font-bold text-sm text-gray-900 tracking-tight">{viewYear}</span>
+            <button
+              type="button"
+              onClick={() => setViewYear((y) => Math.min(maxYear, y + 1))}
+              disabled={viewYear >= maxYear}
+              className="p-1.5 rounded-md text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
+              aria-label="Next year"
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+
+          {/* Grid 12 bulan (3 kolom x 4 baris) */}
+          <div className="grid grid-cols-3 gap-2">
+            {MONTH_ABBR_LABEL.map((m, i) => {
+              const key = `${viewYear}-${String(i + 1).padStart(2, '0')}`;
+              const isAvailable = availableMonths.has(key);
+              const isSelected = key === value;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  disabled={!isAvailable}
+                  onClick={() => {
+                    onChange(key);
+                    setOpen(false);
+                  }}
+                  className={`py-2 rounded-lg text-xs font-semibold transition ${
+                    isSelected
+                      ? 'bg-blue-500 text-white shadow-md shadow-blue-200'
+                      : isAvailable
+                      ? 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+                      : 'text-gray-300 cursor-not-allowed'
+                  }`}
+                >
+                  {m}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DashboardSection({ title, chartType, data, className = "" }: any) {
+  // 1. Daftar bulan yang tersedia di data (udah kronologis dari backend, fullName = "YYYY-MM")
+  const months: string[] = Array.isArray(data) ? data.map((d: any) => d.fullName) : [];
+  const monthSet = new Set(months);
+
+  // 2. State range From/To (pakai key "YYYY-MM" langsung, lebih intuitif buat picker)
+  const [fromKey, setFromKey] = useState<string>('');
+  const [toKey, setToKey] = useState<string>('');
+
+  // 3. Reset range ke full pas data baru masuk
+  useEffect(() => {
+    if (months.length > 0) {
+      setFromKey(months[0]);
+      setToKey(months[months.length - 1]);
+    } else {
+      setFromKey('');
+      setToKey('');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [months.length, months[0], months[months.length - 1]]);
+
+  // 4. Cari index buat slicing + auto-koreksi kalau From > To
+  const fromIdx = months.indexOf(fromKey);
+  const toIdx = months.indexOf(toKey);
+  const safeFrom = Math.min(fromIdx === -1 ? 0 : fromIdx, toIdx === -1 ? 0 : toIdx);
+  const safeTo = Math.max(fromIdx === -1 ? 0 : fromIdx, toIdx === -1 ? 0 : toIdx);
+  const displayData = Array.isArray(data) && months.length > 0 ? data.slice(safeFrom, safeTo + 1) : [];
+
   return (
     <div className={`flex-1 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm ${className}`}>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
         <h3 className="font-semibold text-gray-800 text-sm">{title}</h3>
-        <select className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white outline-none">
-          <option>Last 30 days</option>
-        </select>
+
+        {chartType === "Line Chart" && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <MonthYearPicker
+              value={fromKey}
+              onChange={setFromKey}
+              availableMonths={monthSet}
+              ariaLabel="From month"
+              align="right"
+            />
+            <span className="text-xs text-gray-400 font-medium">to</span>
+            <MonthYearPicker
+              value={toKey}
+              onChange={setToKey}
+              availableMonths={monthSet}
+              ariaLabel="To month"
+              align="right"
+            />
+          </div>
+        )}
       </div>
-      
+
       <div className="w-full h-[220px]">
         {chartType === "Line Chart" ? (
-          <ChurnRiskChart data={data} /> // 2. Kirim data ke sini
+          <ChurnRiskChart data={displayData} />
         ) : (
           <div className="w-full h-full bg-gray-50 rounded-lg flex items-center justify-center border border-dashed border-gray-200 text-gray-400 text-sm">
             [{chartType}]

@@ -1,7 +1,8 @@
+// src/app/upload-csv/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Loader2, Database, ListPlus, X } from 'lucide-react';
 import { CsvDropzone } from '@/components/upload/CsvDropzone';
 import { UploadRequirements } from '@/components/upload/UploadRequirements';
 import { useCsvUpload } from '@/hooks/useCsvUpload';
@@ -9,83 +10,73 @@ import { getCurrentUser } from '@/actions/auth';
 
 export default function UploadCsvPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const { isUploading, status, message, parseAndUpload } = useCsvUpload();
-  
-  // STATE UNTUK NYIMPEN USER DAN STATUS LOADING
   const [activeUserId, setActiveUserId] = useState<string | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  // TARIK DATA PAS HALAMAN DIBUKA (Paling aman buat Next.js Cookie)
+  const { isUploading, status, message, parseAndUpload } = useCsvUpload();
+
   useEffect(() => {
     async function fetchUser() {
       try {
         const user = await getCurrentUser() as any;
-        
-        // BUKA CONSOLE F12 LU DAN CEK TULISAN INI:
-        console.log("CEK JEROAN USER DARI SERVER:", user); 
-        
-        if (user && user.id) {
-          setActiveUserId(user.id);
-        } else if (user && !user.id) {
-          console.error("FATAL: Data user dapet, tapi properti 'id'-nya GAK ADA! Cek src/actions/auth.ts lu.");
-        }
-      } catch (error) {
-        console.error("Error saat fetch user:", error);
-      } finally {
-        setIsAuthLoading(false);
-      }
+        if (user?.id) setActiveUserId(user.id);
+      } finally { setIsAuthLoading(false); }
     }
     fetchUser();
   }, []);
 
-  const handleUpload = () => {
-    if (!selectedFile) return;
-    
-    // Kalau activeUserId masih null pas diklik
-    if (!activeUserId) {
-      alert("Gagal upload! ID Akun lu nggak ditemuin. Buka console (F12) buat liat log-nya.");
-      return;
-    }
-    
-    parseAndUpload(selectedFile, activeUserId);
+  const handleOpenModal = () => {
+    if (!selectedFile || !activeUserId) return;
+    setShowConfirmModal(true);
+  };
+
+  const startUpload = (mode: 'merge' | 'replace') => {
+    setShowConfirmModal(false);
+    parseAndUpload(selectedFile!, activeUserId!, mode);
   };
 
   return (
     <div className="p-4 pt-24 sm:p-6 sm:pt-28 max-w-[1000px] mx-auto w-full">
       <header className="mb-8">
         <h1 className="text-[28px] font-bold text-gray-900 tracking-tight mb-2">Upload Customer Data</h1>
-        <p className="text-gray-500 text-[15px]">Analyze churn risk by uploading your CSV file</p>
+        <p className="text-gray-500 text-[15px]">Manage your customer datasets</p>
       </header>
 
-      <div className="bg-white p-6 md:p-8 rounded-3xl border border-gray-100 shadow-[0_2px_20px_rgba(0,0,0,0.02)]">
-        
-        {/* TAMPILAN LOADING SEMENTARA NGECEK KTP LU */}
+      <div className="bg-white p-6 md:p-8 rounded-3xl border border-gray-100 shadow-sm">
         {isAuthLoading ? (
-          <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50">
-             <Loader2 className="animate-spin text-blue-500 mb-3" size={32} />
-             <p className="text-sm font-medium text-gray-500">Memverifikasi sesi akun lu...</p>
-          </div>
+          <div className="flex justify-center p-12"><Loader2 className="animate-spin text-indigo-500" /></div>
         ) : (
-          <CsvDropzone 
-            file={selectedFile} 
-            isUploading={isUploading}
-            onFileSelect={setSelectedFile}
-            onUpload={handleUpload} 
-          />
+          <CsvDropzone file={selectedFile} isUploading={isUploading} onFileSelect={setSelectedFile} onUpload={handleOpenModal} />
         )}
 
         {status !== 'idle' && (
-          <div className={`mt-6 p-4 rounded-xl flex items-center gap-3 text-sm font-medium ${
-            status === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'
-          }`}>
+          <div className={`mt-6 p-4 rounded-xl flex items-center gap-3 text-sm font-medium ${status === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
             {status === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
             {message}
           </div>
         )}
-
         <UploadRequirements />
-        
       </div>
+
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[999] p-4">
+          <div className="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl relative">
+            <h3 className="text-xl font-bold text-gray-900 mb-6">Pilih Metode Upload</h3>
+            <div className="space-y-3">
+              <button onClick={() => startUpload('merge')} className="w-full flex items-center gap-4 p-4 rounded-2xl border hover:bg-indigo-50 transition-all text-left">
+                <ListPlus className="text-indigo-600" />
+                <div><div className="font-bold text-sm">Tambah (Merge)</div><div className="text-xs text-gray-400">Gabung data, anti-duplikat.</div></div>
+              </button>
+              <button onClick={() => startUpload('replace')} className="w-full flex items-center gap-4 p-4 rounded-2xl border hover:bg-red-50 transition-all text-left">
+                <Database className="text-red-600" />
+                <div><div className="font-bold text-sm">Ganti (Replace)</div><div className="text-xs text-gray-400">Hapus data lama, ganti baru.</div></div>
+              </button>
+              <button onClick={() => setShowConfirmModal(false)} className="w-full py-3 text-gray-400 text-sm">Batal</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

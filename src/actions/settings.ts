@@ -1,33 +1,52 @@
 // src/actions/settings.ts
 'use server';
 
-import { supabase } from '@/lib/supabase';
-import bcrypt from 'bcryptjs';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 
 export async function updateSettings(formData: FormData) {
   try {
     const cookieStore = await cookies();
-    const userId = cookieStore.get('user_session')?.value;
+    
+    // 1. Inisialisasi Supabase Server Client (buat akses session resmi)
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+        },
+      }
+    );
 
-    console.log("Updating User ID:", userId);
+    // 2. Validasi User secara Real-time (Bukan manual dari cookie user_session)
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    if (!userId) return { error: 'Sesi habis, silakan login ulang.' };
+    if (authError || !user) {
+      return { error: 'Sesi habis, silakan login ulang.' };
+    }
 
     const fullName = formData.get('full_name') as string;
     const email = formData.get('email') as string;
     const newPassword = formData.get('new_password') as string;
     const imageFile = formData.get('avatar') as File;
 
-    const updates: any = {};
-    if (fullName) updates.full_name = fullName;
-    if (email) updates.email = email;
+    // Persiapkan data untuk update di Auth Supabase
+    const updateData: any = {
+      data: {} // Folder metadata
+    };
 
-    // 1. Logika Upload Foto
+    if (email) updateData.email = email;
+    if (newPassword && newPassword.trim() !== '') updateData.password = newPassword;
+    if (fullName) updateData.data.full_name = fullName;
+
+    // 3. Logika Upload Foto ke Storage
     if (imageFile && imageFile.size > 0) {
       const fileExt = imageFile.name.split('.').pop();
-      const fileName = `${userId}-${Date.now()}.${fileExt}`;
+      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
@@ -39,32 +58,22 @@ export async function updateSettings(formData: FormData) {
         .from('avatars')
         .getPublicUrl(fileName);
 
-      updates.avatar_url = publicUrl;
+      // Simpan URL foto ke metadata user
+      updateData.data.avatar_url = publicUrl;
     }
 
-    // 2. Logika Hash Password
-    if (newPassword && newPassword.trim() !== '') {
-      const salt = await bcrypt.genSalt(10);
-      updates.password_hash = await bcrypt.hash(newPassword, salt);
-    }
+    // 4. Update Supabase Auth (Menggantikan update manual ke tabel public.users)
+    const { error: updateError } = await supabase.auth.updateUser(updateData);
 
-    // 3. Update Database
-    const { error: dbError } = await supabase
-      .from('users')
-      .update(updates)
-      .eq('id', userId)
-      .select();
+    if (updateError) throw new Error('Gagal update Auth: ' + updateError.message);
 
-    if (dbError) throw new Error('Gagal update Database: ' + dbError.message);
-
-    // Revalidate agar Next.js tahu data sudah berubah
+    // Revalidate agar UI Sidebar & Dashboard langsung update
     revalidatePath('/', 'layout'); 
     
-    // Kembalikan objek yang berisi data terbaru
     return { 
       success: true, 
-      newName: fullName, // Ambil dari variabel fullName di atas
-      newPhoto: updates.avatar_url // Ambil dari variabel updates jika ada
+      newName: fullName,
+      newPhoto: updateData.data.avatar_url
     };
     
   } catch (err: any) {

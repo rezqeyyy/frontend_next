@@ -1,9 +1,8 @@
 // src/app/(protected)/layout.tsx
-import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
 import { redirect } from 'next/navigation';
-// Pastikan path import Sidebar lu bener
-import Sidebar from '@/components/layout/Sidebar'; 
+import Sidebar from "@/components/layout/Sidebar";
 
 export default async function ProtectedLayout({
   children,
@@ -17,25 +16,24 @@ export default async function ProtectedLayout({
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() {
-          return cookieStore.getAll();
+        get(name: string) {
+          return cookieStore.get(name)?.value;
         },
       },
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
+  // PENTING: Ganti getSession jadi getUser buat security yang bener
+  const { data: { user }, error } = await supabase.auth.getUser();
 
-  // Kalau belum login, langsung tendang ke /login
-  if (!user) {
+  if (error || !user) {
     redirect('/login');
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar otomatis muncul di semua halaman dalem grup ini */}
+    <div className="flex h-screen overflow-hidden bg-[#F8F9FB]">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 h-screen overflow-y-auto">
         {children}
       </main>
     </div>

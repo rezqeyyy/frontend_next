@@ -1,10 +1,39 @@
 // src/actions/auth.ts
 'use server';
 
-import { supabase } from '@/lib/supabase';
-import bcrypt from 'bcryptjs';
-import { redirect } from 'next/dist/client/components/navigation';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+
+// Helper untuk inisialisasi Supabase Server Client di setiap action
+async function getSupabaseClient() {
+  const cookieStore = await cookies();
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name: string, value: string, options: any) {
+          try {
+            cookieStore.set({ name, value, ...options });
+          } catch (error) {
+            // Handle middleware set cookies
+          }
+        },
+        remove(name: string, options: any) {
+          try {
+            cookieStore.set({ name, value: '', ...options });
+          } catch (error) {
+            // Handle middleware remove cookies
+          }
+        },
+      },
+    }
+  );
+}
 
 // --- FUNGSI LOGIN ---
 export async function loginUser(formData: FormData) {
@@ -13,24 +42,15 @@ export async function loginUser(formData: FormData) {
 
   if (!email || !password) return { error: 'Email dan password wajib diisi' };
 
-  const { data: user, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('email', email)
-    .single();
+  const supabase = await getSupabaseClient();
 
-  if (error || !user) return { error: 'Akun tidak ditemukan' };
-
-  const isPasswordValid = await bcrypt.compare(password, user.password_hash);
-  if (!isPasswordValid) return { error: 'Password salah' };
-
-  const cookieStore = await cookies();
-  cookieStore.set('user_session', user.id, { 
-    httpOnly: true, 
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: 60 * 60 * 24 * 7 
+  // AUTH RESMI: Supabase bakal nge-hash & ngecek password otomatis
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
   });
+
+  if (error) return { error: error.message };
 
   return { success: true };
 }
@@ -43,58 +63,49 @@ export async function registerUser(formData: FormData) {
 
   if (!fullName || !email || !password) return { error: 'Semua field wajib diisi' };
 
-  // 1. Hash password sebelum disimpan
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
+  const supabase = await getSupabaseClient();
 
-  // 2. Simpan ke tabel 'users' di Supabase
-  const { data: newUser, error } = await supabase
-    .from('users')
-    .insert([
-      { 
-        full_name: fullName, 
-        email: email, 
-        password_hash: hashedPassword 
+  // AUTH RESMI: Masukin nama ke user_metadata biar kesimpen permanen
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        full_name: fullName,
       }
-    ])
-    .select()
-    .single();
-
-  if (error) {
-    if (error.code === '23505') return { error: 'Email sudah terdaftar' };
-    return { error: error.message };
-  }
-
-  // 3. Langsung buat sesi login setelah register sukses
-  const cookieStore = await cookies();
-  cookieStore.set('user_session', newUser.id, { 
-    httpOnly: true, 
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: 60 * 60 * 24 * 7 
+    }
   });
+
+  if (error) return { error: error.message };
 
   return { success: true };
 }
 
+// --- FUNGSI GET CURRENT USER (LAPIS BAJA) ---
 export async function getCurrentUser() {
-  const cookieStore = await cookies();
-  const userId = cookieStore.get('user_session')?.value;
+  const supabase = await getSupabaseClient();
 
-  if (!userId) return null;
+  // PENTING: getUser() melakukan validasi token secara real-time ke server
+  // Ini yang bikin dashboard lu gak bisa ditembus cuma modal ganti parameter URL
+  const { data: { user }, error } = await supabase.auth.getUser();
 
-  const { data: user } = await supabase
-    .from('users')
-    .select('id, full_name, avatar_url, email') 
-    .eq('id', userId)
-    .single();
+  if (error || !user) return null;
 
-  return user;
+  // Mapping data dari metadata biar frontend (Sidebar/Settings) tinggal pake
+  return {
+    id: user.id,
+    email: user.email,
+    full_name: user.user_metadata?.full_name || 'User',
+    avatar_url: user.user_metadata?.avatar_url || null,
+  };
 }
 
-
+// --- FUNGSI SIGN OUT ---
 export async function signOut() {
-  const cookieStore = await cookies();
-  cookieStore.delete('user_session'); // Hapus cookie sesi
-  redirect('/login'); // Lempar ke halaman login
+  const supabase = await getSupabaseClient();
+  
+  // Hapus session di server Supabase & hapus cookies otomatis
+  await supabase.auth.signOut();
+  
+  redirect('/login');
 }

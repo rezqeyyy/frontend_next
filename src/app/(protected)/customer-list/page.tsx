@@ -177,7 +177,7 @@ export default function CustomerListPage() {
                 <tr><td colSpan={11} className="py-8 text-center text-gray-400">Loading your data...</td></tr>
               ) : displayedData.length > 0 ? (
                 displayedData.map((cust, idx) => (
-                  <tr key={cust.customer_id} className="border-b border-gray-50 hover:bg-gray-50/50">
+                  <tr key={cust.id || `${cust.customer_id}-${idx}`} className="border-b border-gray-50 hover:bg-gray-50/50">
                     <td className="py-4 px-2">{(currentPage - 1) * (itemsPerPage === 'all' ? filteredCustomers.length : itemsPerPage) + idx + 1}</td>
                     <td className="py-4 font-semibold text-gray-800">{cust.customer_id ?? '-'}</td>
                     <td className="py-4 text-center">{cust.total_users ?? 0}</td>

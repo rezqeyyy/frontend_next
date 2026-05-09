@@ -8,26 +8,26 @@ export function useCsvUpload() {
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
 
-  // 1. TAMBAH PARAMETER userId DI SINI
-  const parseAndUpload = async (file: File, userId: string) => { 
+  const parseAndUpload = async (file: File, userId: string, mode: 'merge' | 'replace') => { 
     setIsUploading(true);
     setStatus('idle');
 
     try {
-      if (!userId) {
-        throw new Error("Sistem kehilangan jejak sesi lu. Coba refresh halaman.");
+      if (!userId) throw new Error("Sesi habis jink. Refresh dulu.");
+
+      let currentDatasetId: string;
+      const { data: existingDataset } = await supabase.from('datasets').select('id').eq('user_id', userId).maybeSingle();
+
+      if (existingDataset) {
+        currentDatasetId = existingDataset.id;
+        if (mode === 'replace') {
+          await supabase.from('customers').delete().eq('dataset_id', currentDatasetId);
+        }
+      } else {
+        const { data: newDs } = await supabase.from('datasets').insert([{ filename: file.name, user_id: userId }]).select('id').single();
+        currentDatasetId = newDs!.id;
       }
 
-      // 2. BIKIN FOLDER (Dataset) PAKE userId DARI PARAMETER
-      const { data: newFolder, error: folderError } = await supabase
-        .from('datasets')
-        .insert([{ filename: file.name, user_id: userId }])
-        .select('id')
-        .single();
-
-      if (folderError) throw new Error("Gagal bikin folder: " + folderError.message);
-
-      // 3. PARSE CSV
       const formattedData = await new Promise<any[]>((resolve, reject) => {
         Papa.parse(file, {
           header: true,
@@ -35,14 +35,12 @@ export function useCsvUpload() {
           transformHeader: (h) => h.trim().toLowerCase().replace(/\s+/g, '_'),
           complete: (results) => {
             const n = (v: any) => (v !== undefined && v !== null && v !== '') ? Number(v) : 0;
-            
             const data = results.data
-              .filter((row: any) => row.customer_id && row.customer_id.trim() !== '')
+              .filter((row: any) => row.customer_id)
               .map((row: any) => ({
-                dataset_id: newFolder.id,
+                dataset_id: currentDatasetId,
                 customer_id: row.customer_id.trim(),
-                
-                // MAPPING EKSPLISIT
+                recorded_month: row.date ? row.date.trim() : 'Unknown',
                 total_users: n(row.total_users),
                 monthly_usage_hrs: n(row.monthly_usage_hrs),
                 feature_adoption_pct: n(row.feature_adoption_pct),
@@ -89,31 +87,23 @@ export function useCsvUpload() {
                 plan_x_usage: n(row.plan_x_usage),
                 composite_risk: n(row.composite_risk),
                 churn_actual: n(row.churn_actual),
-                
                 churn_risk_score: 0,
                 rank_level: '-',
                 revenue_at_risk: 0
               }));
-            
-            if (data.length === 0) reject(new Error("File CSV kosong."));
-            else resolve(data);
-          },
-          error: (err) => reject(new Error(err.message))
+            resolve(data);
+          }
         });
       });
 
-      // 4. UPLOAD DATA KE DATABASE
       const { error: uploadError } = await supabase
         .from('customers')
-        .insert(formattedData);
+        .upsert(formattedData, { onConflict: 'customer_id,recorded_month,dataset_id' });
 
       if (uploadError) throw new Error(uploadError.message);
-
       setStatus('success');
-      setMessage(`Sukses! ${formattedData.length} baris data berhasil masuk ke brankas lu.`);
-
+      setMessage(mode === 'replace' ? "Data lama dibuang, data baru masuk!" : "Data digabung tanpa duplikat!");
     } catch (err: any) {
-      console.error(err);
       setStatus('error');
       setMessage(err.message);
     } finally {

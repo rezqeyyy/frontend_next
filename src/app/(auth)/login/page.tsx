@@ -6,13 +6,18 @@ import AuthInput from '@/components/auth/AuthInput';
 import { Mail, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { loginUser } from '@/actions/auth';
+// 1. Import createBrowserClient dari library baru
+import { createBrowserClient } from '@supabase/ssr';
 
 export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+
+  // 2. Inisialisasi Supabase pake cara baru di Client
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -20,12 +25,20 @@ export default function LoginPage() {
     setError('');
 
     const formData = new FormData(e.currentTarget);
-    const result = await loginUser(formData);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
 
-    if (result?.error) {
-      setError(result.error);
+    // 3. Eksekusi login langsung pake Supabase SSR Client
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError) {
+      setError(signInError.message);
       setIsLoading(false);
-    } else if (result?.success) {
+    } else {
+      // 4. Kalau sukses, paksa browser pindah buat nge-refresh Cookie Server
       window.location.href = '/dashboard'; 
     }
   }
@@ -43,14 +56,12 @@ export default function LoginPage() {
 
       <form className="w-full" onSubmit={handleSubmit}>
         
-        {/* Tambahkan pesan error jika login gagal */}
         {error && (
           <div className="max-w-[380px] mb-4 p-3 rounded-lg bg-red-50 text-red-500 text-sm border border-red-100">
             {error}
           </div>
         )}
 
-        {/* Tambahkan atribut name="email" */}
         <AuthInput 
           label="Email Address" 
           type="email" 
@@ -60,7 +71,6 @@ export default function LoginPage() {
           required
         />
         
-        {/* Tambahkan atribut name="password" */}
         <AuthInput 
           label="Password" 
           type="password" 
@@ -80,7 +90,6 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        {/* Ubah tipe tombol menjadi submit */}
         <button 
           type="submit" 
           disabled={isLoading}

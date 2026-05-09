@@ -3,8 +3,13 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  // 1. Kasih LOG biar kita tahu middleware-nya JALAN
+  console.log("SATPAM KERJA: Ngecek path ->", request.nextUrl.pathname);
+
   let response = NextResponse.next({
-    request: { headers: request.headers },
+    request: {
+      headers: request.headers,
+    },
   })
 
   const supabase = createServerClient(
@@ -12,44 +17,45 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() { return request.cookies.getAll() },
+        getAll() {
+          return request.cookies.getAll()
+        },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
           response = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
         },
       },
     }
   )
 
-  // getUser() lebih lambat tapi jauh lebih aman buat server-side guard
+  // 2. Cek User secara REAL-TIME ke Supabase
   const { data: { user } } = await supabase.auth.getUser()
 
-  const url = request.nextUrl.clone()
-  const { pathname } = url
+  const isDashboard = request.nextUrl.pathname.startsWith('/dashboard')
+  const isAuthPage = request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register'
 
-  // --- LOGIKA ANTI PING-PONG ---
-
-  // 1. Kalo user BELUM login dan maksa masuk area dashboard
-  if (!user && pathname.startsWith('/dashboard')) {
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
+  // KONDISI A: Mau ke Dashboard tapi NGGAK ADA USER -> Tendang ke Login
+  if (isDashboard && !user) {
+    console.log("DITENDANG: Gak ada session!");
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // 2. Kalo user SUDAH login tapi iseng buka page login/register
-  if (user && (pathname === '/login' || pathname === '/register')) {
-    url.pathname = '/dashboard'
-    return NextResponse.redirect(url)
+  // KONDISI B: Udah login tapi mau ke Login/Register -> Lempar ke Dashboard
+  if (isAuthPage && user) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   return response
 }
 
-// MATCHER: Jangan pake regex yang ribet, sebutin aja yang mau dijaga
 export const config = {
   matcher: [
-    '/dashboard/:path*', // Jagain semua yang di dalem folder dashboard
-    '/login',            // Cek rute login
-    '/register',         // Cek rute register
+    /*
+     * Matcher ini nge-cover semua kecuali file statis (gambar/css)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

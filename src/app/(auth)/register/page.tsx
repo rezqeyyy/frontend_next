@@ -6,25 +6,48 @@ import AuthInput from '@/components/auth/AuthInput';
 import { User, Mail, Lock } from 'lucide-react';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { registerUser } from '@/actions/auth';
+import { createBrowserClient } from '@supabase/ssr';
 
 export default function RegisterPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState(''); // Tambahan state buat validasi password
+  const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter(); 
+
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
-    const formData = new FormData(e.currentTarget);
-    const result = await registerUser(formData);
-
-    if (result?.error) {
-      setError(result.error);
+    // Validasi biar password konfirmasi nggak meleset
+    if (password !== confirmPassword) {
+      setError('Password konfirmasi tidak cocok!');
       setIsLoading(false);
-    } else if (result?.success) {
+      return;
+    }
+
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        data: {
+          full_name: fullName, // Nyimpen nama ke metadata auth bawaan
+        }
+      }
+    });
+
+    if (signUpError) {
+      setError(signUpError.message);
+      setIsLoading(false);
+    } else {
+      alert('Registrasi sukses! Silakan login.');
       window.location.href = '/login'; 
     }
   }
@@ -53,6 +76,8 @@ export default function RegisterPage() {
           type="text" 
           placeholder="Haechan Lee" 
           icon={<User size={18} strokeWidth={2.5} />} 
+          value={fullName}
+          onChange={(e: any) => setFullName(e.target.value)}
           required
         />
         <AuthInput 
@@ -61,24 +86,31 @@ export default function RegisterPage() {
           type="email" 
           placeholder="you@example.com" 
           icon={<Mail size={18} strokeWidth={2.5} />} 
+          value={email}
+          onChange={(e: any) => setEmail(e.target.value)}
           required
         />
         
         {/* Label tetap "Full Name" sesuai desain asli di mockup */}
         <AuthInput 
-          label="Full Name" 
+          label="Password" 
           name="password"
           type="password" 
           placeholder="create a password" 
           icon={<Lock size={18} strokeWidth={2.5} />} 
+          value={password}
+          onChange={(e: any) => setPassword(e.target.value)}
           required
         />
         
         <AuthInput 
-          label="Password" 
+          label="Confirm Password" 
+          name="confirm_password"
           type="password" 
           placeholder="confirm your password" 
           icon={<Lock size={18} strokeWidth={2.5} />} 
+          value={confirmPassword}
+          onChange={(e: any) => setConfirmPassword(e.target.value)}
           required
         />
 

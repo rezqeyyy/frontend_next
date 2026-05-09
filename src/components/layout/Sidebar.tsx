@@ -25,8 +25,12 @@ export default function Sidebar() {
     async function fetchUser() {
       const user = await getCurrentUser() as any; 
       if (user) {
-        setUserName(user.full_name);
-        if (user.avatar_url) setUserPhoto(user.avatar_url);
+        // AMBIL DARI user_metadata JINK!
+        const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+        const photo = user.user_metadata?.avatar_url || null;
+        
+        setUserName(name);
+        if (photo) setUserPhoto(photo);
       } else {
         setUserName('Guest');
       }
