@@ -18,14 +18,24 @@ async function getSupabaseClient() {
         },
         set(name: string, value: string, options: any) {
           try {
-            cookieStore.set({ name, value, ...options });
+            // HAPUS UMUR COOKIE DI SINI
+            const sessionOptions = { ...options };
+            delete sessionOptions.maxAge;
+            delete sessionOptions.expires;
+
+            cookieStore.set({ name, value, ...sessionOptions });
           } catch (error) {
             // Handle middleware set cookies
           }
         },
         remove(name: string, options: any) {
           try {
-            cookieStore.set({ name, value: '', ...options });
+            // HAPUS UMUR COOKIE DI SINI JUGA
+            const sessionOptions = { ...options };
+            delete sessionOptions.maxAge;
+            delete sessionOptions.expires;
+
+            cookieStore.set({ name, value: '', ...sessionOptions });
           } catch (error) {
             // Handle middleware remove cookies
           }
