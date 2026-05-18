@@ -339,7 +339,9 @@ export default function PredictionResultsPage() {
       <div className="mt-10 lg:mt-14 w-full">
         <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">Tanya AI Assistant</h2>
         <p className="text-sm text-gray-500 mb-6">Punya pertanyaan tentang data prediksi di atas? Diskusikan langsung dengan AI KEEVA di sini.</p>
-        <InlineChat />
+        
+        {/* Oper data tabel yang sedang tampil ke dalam komponen Chat */}
+        <InlineChat tableData={displayedData} />
       </div>
 
     </div>

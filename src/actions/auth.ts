@@ -67,21 +67,29 @@ export async function loginUser(formData: FormData) {
 
 // --- FUNGSI REGISTER ---
 export async function registerUser(formData: FormData) {
+  // 1. Tangkap semua data dari form
   const fullName = formData.get('full_name') as string;
   const email = formData.get('email') as string;
+  const employeeId = formData.get('employee_id') as string;
+  const department = formData.get('department') as string;
   const password = formData.get('password') as string;
 
-  if (!fullName || !email || !password) return { error: 'Semua field wajib diisi' };
+  // 2. Validasi field baru
+  if (!fullName || !email || !employeeId || !department || !password) {
+    return { error: 'Semua field wajib diisi' };
+  }
 
   const supabase = await getSupabaseClient();
 
-  // AUTH RESMI: Masukin nama ke user_metadata biar kesimpen permanen
+  // 3. AUTH RESMI: Masukin semua data tambahan ke user_metadata
   const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: {
         full_name: fullName,
+        employee_id: employeeId,
+        department: department,
       }
     }
   });
@@ -101,11 +109,13 @@ export async function getCurrentUser() {
 
   if (error || !user) return null;
 
-  // Mapping data dari metadata biar frontend (Sidebar/Settings) tinggal pake
+  // 4. Mapping data dari metadata biar frontend (Sidebar/Profile) tinggal pake semua isinya
   return {
     id: user.id,
     email: user.email,
     full_name: user.user_metadata?.full_name || 'User',
+    employee_id: user.user_metadata?.employee_id || null,
+    department: user.user_metadata?.department || null,
     avatar_url: user.user_metadata?.avatar_url || null,
   };
 }
@@ -117,5 +127,5 @@ export async function signOut() {
   // Hapus session di server Supabase & hapus cookies otomatis
   await supabase.auth.signOut();
   
-  redirect('/login');
+  redirect('/');
 }
