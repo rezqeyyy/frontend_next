@@ -21,10 +21,10 @@ export default function Navbar() {
             <div className="hidden lg:flex items-center gap-8 text-sm font-semibold text-gray-600">
                 <Link href="#" className="hover:text-purple-400 transition">Home</Link>
                 <Link href="#features" className="hover:text-purple-400 transition">Feature</Link>
-                <Link href="#about" className="hover:text-purple-400 transition">About</Link>
-                <Link href="#integrations" className="hover:text-purple-400 transition">Integrations</Link>
+                <Link href="#about" className="hover:text-purple-400 transition">Workflow</Link>
+                <Link href="#integrations" className="hover:text-purple-400 transition">AI Syestem</Link>
                 <Link href="#profile" className="hover:text-purple-400 transition">Profile</Link>
-                <Link href="#about-system" className="hover:text-purple-400 transition">About the system</Link>
+                <Link href="about-system" className="hover:text-purple-400 transition">About the system</Link>
             </div>
 
             <div className="hidden lg:flex items-center gap-4">

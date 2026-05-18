@@ -101,14 +101,6 @@ export default function LoginPage() {
         <div className="max-w-[380px] my-6 flex items-center justify-center">
           <span className="text-[11px] text-gray-400">Or continue with</span>
         </div>
-
-        <div className="max-w-[380px] flex gap-4">
-          <button type="button" className="flex-1 py-2.5 rounded-xl border-2 border-[#f5eeff] shadow-[0_0_15px_rgba(225,200,255,0.4)] flex items-center justify-center gap-2 text-[#9eb6f9] font-bold text-sm hover:bg-gray-50 transition-all">
-            <span className="text-lg">G</span> GOOGLE
-          </button>
-          <button type="button" className="w-[120px] py-2.5 rounded-xl border-2 border-[#f5eeff] shadow-[0_0_15px_rgba(225,200,255,0.4)] hover:bg-gray-50 transition-all">
-          </button>
-        </div>
       </form>
     </AuthLayout>
   );
