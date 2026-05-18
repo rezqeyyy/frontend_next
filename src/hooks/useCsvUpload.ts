@@ -16,22 +16,35 @@ export function useCsvUpload() {
       if (!userId) throw new Error("Sesi habis jink. Refresh dulu.");
 
       let currentDatasetId: string;
-      const { data: existingDataset } = await supabase.from('datasets').select('id').eq('user_id', userId).maybeSingle();
+      const { data: existingDataset } = await supabase
+        .from('datasets')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
 
       if (existingDataset) {
         currentDatasetId = existingDataset.id;
+        
+        // Jika pilih replace, hapus dulu semua
         if (mode === 'replace') {
           const { error: deleteError } = await supabase
             .from('customers')
             .delete()
             .eq('dataset_id', currentDatasetId);
-
-          if (deleteError) {
-            throw new Error(`Gagal memadam data lama: ${deleteError.message}`);
-          }
+          
+          if (deleteError) throw new Error(`Gagal hapus data lama: ${deleteError.message}`);
+          
+          // Beri jeda kecil
+          await new Promise(resolve => setTimeout(resolve, 200));
         }
       } else {
-        const { data: newDs } = await supabase.from('datasets').insert([{ filename: file.name, user_id: userId }]).select('id').single();
+        const { data: newDs, error: dsError } = await supabase
+          .from('datasets')
+          .insert([{ filename: file.name, user_id: userId }])
+          .select('id')
+          .single();
+        
+        if (dsError) throw new Error(dsError.message);
         currentDatasetId = newDs!.id;
       }
 
@@ -99,18 +112,25 @@ export function useCsvUpload() {
                 revenue_at_risk: 0
               }));
             resolve(data);
-          }
+          },
+          error: (error) => reject(error)
         });
       });
 
+      // Jika data kosong setelah difilter, stop di sini
+      if (formattedData.length === 0) throw new Error("File CSV kosong atau format customer_id salah.");
+
+      // PERBAIKAN: Jalankan upload setelah dipastikan delete (jika ada) sudah selesai
       const { error: uploadError } = await supabase
         .from('customers')
         .upsert(formattedData, { onConflict: 'customer_id,recorded_month,dataset_id' });
 
       if (uploadError) throw new Error(uploadError.message);
+      
       setStatus('success');
       setMessage(mode === 'replace' ? "Data lama dibuang, data baru masuk!" : "Data digabung tanpa duplikat!");
     } catch (err: any) {
+      console.error("Upload error:", err);
       setStatus('error');
       setMessage(err.message);
     } finally {
