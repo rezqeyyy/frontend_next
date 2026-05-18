@@ -3,16 +3,18 @@
 
 import AuthLayout from '@/components/auth/AuthLayout';
 import AuthInput from '@/components/auth/AuthInput';
-import { User, Mail, Lock } from 'lucide-react';
+import { User, Mail, Lock, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
 
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState(''); // Tambahan state buat validasi password
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [employeeId, setEmployeeId] = useState('');
+  const [department, setDepartment] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -26,7 +28,6 @@ export default function RegisterPage() {
     setIsLoading(true);
     setError('');
 
-    // Validasi biar password konfirmasi nggak meleset
     if (password !== confirmPassword) {
       setError('Password konfirmasi tidak cocok!');
       setIsLoading(false);
@@ -38,7 +39,9 @@ export default function RegisterPage() {
       password: password,
       options: {
         data: {
-          full_name: fullName, // Nyimpen nama ke metadata auth bawaan
+          full_name: fullName,
+          employee_id: employeeId,
+          department: department,
         }
       }
     });
@@ -54,7 +57,7 @@ export default function RegisterPage() {
 
   return (
     <AuthLayout>
-      <div className="mb-6 mt-[-40px]">
+      <div className="mb-6 mt-[-20px]">
         <h1 className="text-[42px] font-bold bg-gradient-to-r from-[#94b1fc] to-[#bc9cf4] bg-clip-text text-transparent mb-1 leading-tight tracking-tight">
           Create Account
         </h1>
@@ -63,9 +66,9 @@ export default function RegisterPage() {
         </p>
       </div>
 
-      <form className="w-full" onSubmit={handleSubmit}>
+      <form className="w-full flex flex-col gap-4" onSubmit={handleSubmit}>
         {error && (
-          <div className="max-w-[380px] mb-4 p-3 rounded-lg bg-red-50 text-red-500 text-sm border border-red-100">
+          <div className="max-w-[380px] p-3 rounded-lg bg-red-50 text-red-500 text-sm border border-red-100">
             {error}
           </div>
         )}
@@ -74,62 +77,97 @@ export default function RegisterPage() {
           label="Full Name" 
           name="full_name"
           type="text" 
-          placeholder="Haechan Lee" 
-          icon={<User size={18} strokeWidth={2.5} />} 
+          placeholder="Tulis nama anda disini" 
+          icon={<User size={18} strokeWidth={2.5} className="text-gray-300" />} 
           value={fullName}
           onChange={(e: any) => setFullName(e.target.value)}
           required
         />
+        
         <AuthInput 
-          label="Email Address" 
+          label="Company Email" 
           name="email"
           type="email" 
-          placeholder="you@example.com" 
-          icon={<Mail size={18} strokeWidth={2.5} />} 
+          placeholder="nama@company.com" 
+          icon={<Mail size={18} strokeWidth={2.5} className="text-gray-300" />} 
           value={email}
           onChange={(e: any) => setEmail(e.target.value)}
           required
         />
+
+        <AuthInput 
+          label="Employee ID" 
+          name="employee_id"
+          type="text" 
+          placeholder="EMP1234 atau KVA12345" 
+          icon={<User size={18} strokeWidth={2.5} className="text-gray-300" />} 
+          value={employeeId}
+          onChange={(e: any) => setEmployeeId(e.target.value)}
+          required
+        />
+
+        {/* Custom Select Input untuk Departement */}
+        <div className="max-w-[380px]">
+          <label className="block text-[13px] text-gray-900 font-medium mb-1.5 ml-1">
+            Departement
+          </label>
+          <div className="relative">
+            <select
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
+              required
+              className="w-full pl-4 pr-10 py-3 rounded-[14px] border-2 border-[#f5eeff] focus:border-[#d8c2ff] focus:ring-4 focus:ring-[#f5eeff] outline-none transition-all shadow-[0_0_15px_rgba(225,200,255,0.4)] text-[13px] text-gray-400 bg-white appearance-none cursor-pointer"
+            >
+              <option value="" disabled>select department</option>
+              <option value="IT">IT / Engineering</option>
+              <option value="HR">Human Resources</option>
+              <option value="Sales">Sales & Marketing</option>
+              <option value="Finance">Finance</option>
+              <option value="Operations">Operations</option>
+            </select>
+            <ChevronDown size={18} strokeWidth={2.5} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#d8c2ff] pointer-events-none" />
+          </div>
+        </div>
         
-        {/* Label tetap "Full Name" sesuai desain asli di mockup */}
         <AuthInput 
           label="Password" 
           name="password"
           type="password" 
           placeholder="create a password" 
-          icon={<Lock size={18} strokeWidth={2.5} />} 
+          icon={<Lock size={18} strokeWidth={2.5} className="text-gray-300" />} 
           value={password}
           onChange={(e: any) => setPassword(e.target.value)}
           required
         />
         
         <AuthInput 
-          label="Confirm Password" 
+          // Label dikosongkan karena di desain tidak ada teks label untuk confirm password
+          label="" 
           name="confirm_password"
           type="password" 
           placeholder="confirm your password" 
-          icon={<Lock size={18} strokeWidth={2.5} />} 
+          icon={<Lock size={18} strokeWidth={2.5} className="text-gray-300" />} 
           value={confirmPassword}
           onChange={(e: any) => setConfirmPassword(e.target.value)}
           required
         />
 
-        <div className="flex items-center gap-2 max-w-[380px] mt-2 mb-6">
-          <input type="checkbox" required className="w-3.5 h-3.5 rounded border-gray-300 text-[#bc9cf4] focus:ring-[#bc9cf4]" />
-          <span className="text-[10px] text-gray-500">
-            I agree to the <a href="#" className="underline">Terms and Conditions</a> and <a href="#" className="underline">Privacy Policy</a>
+        <div className="flex items-center gap-2 max-w-[380px] mt-1 mb-2">
+          <input type="checkbox" required className="w-3 h-3 rounded border-gray-300 text-[#bc9cf4] focus:ring-[#bc9cf4]" />
+          <span className="text-[9px] text-gray-400">
+            I agree to the <a href="#" className="underline decoration-gray-400">Terms and Conditions</a> and <a href="#" className="underline decoration-gray-400">Privacy Policy</a>
           </span>
         </div>
 
-        {/* Button tetap bertuliskan "Sign In" sesuai desain asli di mockup */}
         <button 
           type="submit" 
           disabled={isLoading}
-          className="w-full max-w-[380px] py-3 rounded-xl bg-gradient-to-r from-[#f7f8ff] to-[#f7f8ff] border border-[#f0f2ff] shadow-[0_4px_10px_rgba(216,194,255,0.1)] text-[#cbaeff] font-semibold text-lg hover:brightness-95 transition-all disabled:opacity-50"
+          className="w-full max-w-[380px] py-3 rounded-xl bg-[#f8f9fd] border border-[#f0f2ff] text-[#cbaeff] font-semibold text-lg hover:brightness-95 transition-all disabled:opacity-50"
         >
-          {isLoading ? 'Creating Account...' : 'Sign In'}
+          {isLoading ? 'Processing...' : 'Sign In'}
         </button>
       </form>
+
     </AuthLayout>
   );
 }

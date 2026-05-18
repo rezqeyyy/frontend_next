@@ -3,17 +3,15 @@
 
 import AuthLayout from '@/components/auth/AuthLayout';
 import AuthInput from '@/components/auth/AuthInput';
-import { Mail, Lock } from 'lucide-react';
+import { User, Lock } from 'lucide-react'; // Mengganti Mail dengan User agar lebih general
 import Link from 'next/link';
 import { useState } from 'react';
-// 1. Import createBrowserClient dari library baru
 import { createBrowserClient } from '@supabase/ssr';
 
 export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // 2. Inisialisasi Supabase pake cara baru di Client
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -25,27 +23,45 @@ export default function LoginPage() {
     setError('');
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get('email') as string;
+    const identifier = formData.get('identifier') as string; // Menangkap Email ATAU Employee ID
     const password = formData.get('password') as string;
 
-    // 3. Eksekusi login langsung pake Supabase SSR Client
+    let loginEmail = identifier;
+
+    // LOGIKA PENGECEKAN: Jika input TIDAK ada karakter '@', asumsikan itu adalah Employee ID
+    if (!identifier.includes('@')) {
+      // Panggil fungsi RPC yang barusan kita buat di Supabase SQL
+      const { data: fetchedEmail, error: rpcError } = await supabase.rpc('get_email_by_employee_id', {
+        emp_id: identifier
+      });
+
+      if (rpcError || !fetchedEmail) {
+        setError('Employee ID tidak ditemukan.');
+        setIsLoading(false);
+        return;
+      }
+      
+      // Jika ketemu, ganti loginEmail dengan email asli dari database
+      loginEmail = fetchedEmail;
+    }
+
+    // Eksekusi login resmi menggunakan Email (baik email yang diketik langsung, atau hasil pencarian ID)
     const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
+      email: loginEmail,
       password,
     });
 
     if (signInError) {
-      setError(signInError.message);
+      setError("Login gagal. Pastikan ID/Email dan password benar.");
       setIsLoading(false);
     } else {
-      // 4. Kalau sukses, paksa browser pindah buat nge-refresh Cookie Server
       window.location.href = '/dashboard'; 
     }
   }
 
   return (
     <AuthLayout>
-      <div className="mb-8">
+      <div className="mb-8 mt-4">
         <h1 className="text-[42px] font-bold bg-gradient-to-r from-[#94b1fc] to-[#bc9cf4] bg-clip-text text-transparent mb-1 leading-tight tracking-tight">
           Welcome Back
         </h1>
@@ -54,20 +70,20 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <form className="w-full" onSubmit={handleSubmit}>
+      <form className="w-full flex flex-col gap-4" onSubmit={handleSubmit}>
         
         {error && (
-          <div className="max-w-[380px] mb-4 p-3 rounded-lg bg-red-50 text-red-500 text-sm border border-red-100">
+          <div className="max-w-[380px] p-3 rounded-lg bg-red-50 text-red-500 text-sm border border-red-100">
             {error}
           </div>
         )}
 
         <AuthInput 
-          label="Email Address" 
-          type="email" 
-          name="email"
-          placeholder="you@example.com" 
-          icon={<Mail size={18} strokeWidth={2.5} />} 
+          label="Email or Employee ID" 
+          type="text"  // Harus 'text', jangan 'email' karena user bisa mengisi EMP1234
+          name="identifier"
+          placeholder="nama@company.com atau KVA12345" 
+          icon={<User size={18} strokeWidth={2.5} className="text-gray-300" />} 
           required
         />
         
@@ -76,7 +92,7 @@ export default function LoginPage() {
           type="password" 
           name="password"
           placeholder="enter your password" 
-          icon={<Lock size={18} strokeWidth={2.5} />} 
+          icon={<Lock size={18} strokeWidth={2.5} className="text-gray-300" />} 
           required
         />
 
@@ -93,23 +109,26 @@ export default function LoginPage() {
         <button 
           type="submit" 
           disabled={isLoading}
-          className="w-full max-w-[380px] py-3 rounded-xl bg-gradient-to-r from-[#f7f8ff] to-[#f7f8ff] border border-[#f0f2ff] shadow-[0_4px_10px_rgba(216,194,255,0.1)] text-[#cbaeff] font-semibold text-lg hover:brightness-95 transition-all disabled:opacity-50"
+          className="w-full max-w-[380px] py-3 rounded-xl bg-[#f8f9fd] border border-[#f0f2ff] text-[#cbaeff] font-semibold text-lg hover:brightness-95 transition-all disabled:opacity-50"
         >
           {isLoading ? 'Signing In...' : 'Sign In'}
         </button>
 
-        <div className="max-w-[380px] my-6 flex items-center justify-center">
-          <span className="text-[11px] text-gray-400">Or continue with</span>
-        </div>
-
-        <div className="max-w-[380px] flex gap-4">
-          <button type="button" className="flex-1 py-2.5 rounded-xl border-2 border-[#f5eeff] shadow-[0_0_15px_rgba(225,200,255,0.4)] flex items-center justify-center gap-2 text-[#9eb6f9] font-bold text-sm hover:bg-gray-50 transition-all">
-            <span className="text-lg">G</span> GOOGLE
-          </button>
-          <button type="button" className="w-[120px] py-2.5 rounded-xl border-2 border-[#f5eeff] shadow-[0_0_15px_rgba(225,200,255,0.4)] hover:bg-gray-50 transition-all">
-          </button>
+        <div className="max-w-[380px] mt-6 flex items-center justify-center">
+          <span className="text-[11px] text-gray-400">
+            Don't have an account?{' '}
+            <Link href="/register" className="underline hover:text-gray-600 transition-colors">
+              Sign up
+            </Link>
+          </span>
         </div>
       </form>
+
+      <div className="mt-8 max-w-[380px]">
+        <Link href="/" className="text-[13px] text-[#bc9cf4] hover:text-[#94b1fc] transition-colors flex items-center font-medium">
+          &lt; Back To Website
+        </Link>
+      </div>
     </AuthLayout>
   );
 }

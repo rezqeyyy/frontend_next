@@ -21,7 +21,14 @@ export function useCsvUpload() {
       if (existingDataset) {
         currentDatasetId = existingDataset.id;
         if (mode === 'replace') {
-          await supabase.from('customers').delete().eq('dataset_id', currentDatasetId);
+          const { error: deleteError } = await supabase
+            .from('customers')
+            .delete()
+            .eq('dataset_id', currentDatasetId);
+
+          if (deleteError) {
+            throw new Error(`Gagal memadam data lama: ${deleteError.message}`);
+          }
         }
       } else {
         const { data: newDs } = await supabase.from('datasets').insert([{ filename: file.name, user_id: userId }]).select('id').single();
