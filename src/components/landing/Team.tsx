@@ -25,8 +25,8 @@ export default function Team() {
     ];
 
     return (
-        <section className="py-24 px-6 bg-white">
-        <div id="profile" className="max-w-7xl mx-auto text-center">
+        <section id="profile" className="py-24 px-6 bg-white">
+        <div className="max-w-7xl mx-auto text-center">
             <h2 className="text-3xl font-bold text-purple-300 mb-2 tracking-tight">
             Meet Our Team
             </h2>

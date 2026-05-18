@@ -11,7 +11,7 @@ import Footer from "@/components/landing/Footer";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div id="home" className="min-h-screen bg-white">
       {/* 1. Navigasi Atas */}
       <Navbar />
 

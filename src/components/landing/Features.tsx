@@ -67,7 +67,7 @@ export default function Features() {
       </section>
 
       {/* SECTION: HOW KEEVA WORKS */}
-      <section className="py-24 px-6 bg-[#fafbff] text-center">
+      <section id="workflow" className="py-24 px-6 bg-[#fafbff] text-center">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-3xl font-bold text-purple-300 mb-2 tracking-tight">
             How Keeva Works
@@ -114,7 +114,7 @@ export default function Features() {
       </section>
 
       {/* SECTION: HOW THE SYSTEM WORKS (The 1, 2, 3, 4 Steps) */}
-      <section className="py-24 px-6 bg-white text-center">
+      <section id="ai-system" className="py-24 px-6 bg-white text-center">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-purple-300 mb-2 tracking-tight">
             How the System Works
