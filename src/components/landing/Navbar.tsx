@@ -19,7 +19,7 @@ export default function Navbar() {
 
             {/* DESKTOP NAV */}
             <div className="hidden lg:flex items-center gap-8 text-sm font-semibold text-gray-600">
-                <Link href="#" className="hover:text-purple-400 transition">Home</Link>
+                <Link href="/" className="hover:text-purple-400 transition">Home</Link>
                 <Link href="#features" className="hover:text-purple-400 transition">Feature</Link>
                 <Link href="#about" className="hover:text-purple-400 transition">Workflow</Link>
                 <Link href="#integrations" className="hover:text-purple-400 transition">AI Syestem</Link>

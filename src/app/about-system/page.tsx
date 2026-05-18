@@ -1,4 +1,5 @@
 "use client";
+import Navbar from "@/components/landing/Navbar";
 
 import {
   Brain,
@@ -17,6 +18,7 @@ import {
   Zap,
   Activity,
   Star,
+  Link,
 } from "lucide-react";
 
 const steps = [
@@ -128,8 +130,8 @@ const capabilities = [
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center justify-center gap-2 mb-4">
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-purple-200 bg-purple-50 text-purple-600 text-xs font-semibold tracking-widest uppercase">
-        <Star size={11} className="fill-purple-400 text-purple-400" />
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-purple-300 bg-purple-50 text-purple-300 text-xs font-semibold tracking-widest uppercase">
+        <Star size={11} className="fill-purple-300 text-purple-300" />
         {children}
       </span>
     </div>
@@ -147,7 +149,7 @@ function SectionTitle({
     <h2
       className={`text-3xl md:text-4xl font-bold text-center mb-3 ${
         gradient
-          ? "bg-gradient-to-r from-blue-500 via-purple-500 to-pink-400 bg-clip-text text-transparent"
+          ? "bg-gradient-to-r from-blue-300 via-purple-300 to-pink-200 bg-clip-text text-transparent"
           : "text-gray-800"
       }`}
     >
@@ -159,6 +161,7 @@ function SectionTitle({
 export default function AboutTheSystemPage() {
   return (
     <>
+      <Navbar />
       <style>{`
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(32px); }
@@ -185,7 +188,7 @@ export default function AboutTheSystemPage() {
 
             <h1 className="anim anim-1 text-5xl md:text-6xl font-extrabold leading-tight mb-6">
               <span className="text-gray-900">Keeva </span>
-              <span className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-300 via-purple-300 to-pink-200 bg-clip-text text-transparent">
                 Churn Prediction
               </span>
             </h1>
@@ -202,7 +205,7 @@ export default function AboutTheSystemPage() {
           <SectionLabel>About Keeva</SectionLabel>
           <SectionTitle gradient>What is Keeva?</SectionTitle>
 
-          <div className="anim anim-1 mt-10 rounded-2xl border border-purple-100 bg-gradient-to-br from-purple-50/60 to-blue-50/40 p-8 md:p-10 shadow-sm">
+          <div className="anim anim-1 mt-10 rounded-2xl border border-purple-200 bg-gradient-to-br from-purple-50/60 to-blue-50/40 p-8 md:p-10 shadow-sm">
             <p className="text-gray-700 font-semibold text-base md:text-lg leading-relaxed mb-4">
               Keeva is an AI-powered churn analytics platform built to help companies
               deeply understand customer behavior. It leverages state-of-the-art Machine
@@ -318,30 +321,45 @@ export default function AboutTheSystemPage() {
 
         {/* CTA */}
         <section className="py-20 px-6">
-          <div className="anim anim-1 max-w-4xl mx-auto rounded-3xl bg-gradient-to-r from-blue-500 via-purple-600 to-pink-500 p-12 text-center text-white relative overflow-hidden shadow-2xl">
-            <div className="absolute left-8 top-1/2 -translate-y-1/2 opacity-20">
-              <Star size={64} className="fill-white text-white" />
+        <div className="max-w-7xl mx-auto bg-gradient-to-r from-purple-400 to-indigo-400 rounded-[3rem] p-10 md:p-12 text-white relative overflow-hidden shadow-2xl shadow-purple-200">
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="flex items-center gap-6 text-left">
+              <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0">
+                <Sparkles className="text-white" size={28} />
+              </div>
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold mb-2">
+                  Ready to Reduce Customer Churn?
+                </h2>
+                <p className="text-purple-50 text-sm mb-3">
+                  Join thousands of companies using Keeva to predict and prevent
+                  customer churn with AI-powered insights.
+                </p>
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-medium text-purple-50">
+                  <span className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
+                    Enterprise solution
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
+                    Expert onboarding
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
+                    24/7 support
+                  </span>
+                </div>
+              </div>
             </div>
-            <h2 className="text-3xl md:text-4xl font-extrabold mb-3">
-              Ready to Reduce Customer Churn?
-            </h2>
-            <p className="text-white/80 text-sm mb-8">
-              Join thousands of companies using Keeva to predict and prevent
-              customer churn with AI-powered insights.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-white/70 mb-8">
-              <span>⭐ Enterprise solution</span>
-              <span>⭐ Expert onboarding</span>
-              <span>⭐ 24/7 support</span>
-            </div>
-            <a
-              href="/login"
-              className="inline-block bg-white text-purple-600 font-bold px-8 py-3 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all text-sm"
+            <Link
+              href="/register"
+              className="bg-white text-purple-600 px-10 py-4 rounded-2xl font-bold text-base hover:bg-gray-50 transition shrink-0"
             >
               Start Keeva
-            </a>
+            </Link>
           </div>
-        </section>
+        </div>
+      </section>
 
       </main>
     </>
