@@ -6,7 +6,6 @@ export interface ChatMessage {
 
 export interface ChatRequestPayload {
   message: string;
-  // Tambahkan field lain jika backend lo butuh, 
-  // misalnya customer_id seperti di error traceback lo sebelumnya:
-  // customer_id?: string; 
+  customer_id?: string;
+  churn_data?: any[];
 }

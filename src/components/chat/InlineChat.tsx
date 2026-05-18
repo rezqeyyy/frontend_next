@@ -4,7 +4,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage } from '@/types/chat';
 import { sendChatMessage } from '@/services/chatService';
 
-export default function InlineChat() {
+interface InlineChatProps {
+  tableData?: any[];
+}
+
+export default function InlineChat({ tableData = [] }: InlineChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -33,7 +37,7 @@ export default function InlineChat() {
     setIsLoading(true);
 
     try {
-      const reply = await sendChatMessage({ message: userMsg.content });
+      const reply = await sendChatMessage({ message: userMsg.content, churn_data: tableData });
       
       const botMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
