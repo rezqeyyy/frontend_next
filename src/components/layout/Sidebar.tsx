@@ -116,13 +116,19 @@ export default function Sidebar() {
         <button
           onClick={() => setIsCollapsed((v) => !v)}
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="hidden lg:flex absolute -right-4 top-8 z-30 w-8 h-8 items-center justify-center rounded-full bg-white border-2 border-slate-100 text-slate-600 shadow-sm hover:text-blue-600 hover:border-blue-100 hover:bg-blue-50 transition-all"
+          className={`
+            hidden lg:flex absolute top-8 z-30 w-8 h-8 items-center justify-center transition-all
+            ${isCollapsed 
+              ? "-right-4 rounded-full bg-white border-2 border-slate-100 shadow-sm text-slate-600 hover:text-blue-600 hover:border-blue-100 hover:bg-blue-50" 
+              : "right-5 bg-transparent text-slate-400 hover:text-blue-600"
+            }
+          `}
         >
           {isCollapsed ? <ChevronRight size={18} strokeWidth={2.5} /> : <ChevronLeft size={18} strokeWidth={2.5} />}
         </button>
 
         {/* LOGO AREA */}
-        <div className={`flex items-center h-20 ${isCollapsed ? "lg:justify-center px-6" : "px-7"}`}>
+        <div className={`flex items-center h-20 transition-all duration-300 ${isCollapsed ? "lg:justify-center px-6" : "pl-7 pr-14"}`}>
           <div className="flex items-center gap-3">
             <img
               src="/assets/keeva.png"
