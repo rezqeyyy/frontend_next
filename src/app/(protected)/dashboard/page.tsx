@@ -72,23 +72,30 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <div className="p-4 pt-20 sm:p-6 lg:p-8 lg:pt-8 max-w-[1600px] mx-auto text-gray-800">
+    // FIX BREAKPOINT: Menaikkan pt- untuk mobile (pt-24) dan sm/tablet (sm:pt-28) agar judul tidak tersembunyi di balik navbar saat bertumpuk vertikal, namun tetap ciamik di layar lebar (lg:pt-10)
+    <div className="p-4 pt-24 sm:pt-28 md:pt-16 lg:pt-10 sm:p-6 lg:p-8 max-w-[1600px] mx-auto text-gray-800 overflow-x-hidden">
       
-      {/* HEADER */}
-      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl sm:text-[28px] font-bold text-gray-900 leading-tight">Customer Churn Dashboard</h1>
+      {/* HEADER - OPTIMASI RESPONSIVE GRID/FLEX */}
+      <header className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-6 w-full">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-[28px] font-bold text-gray-900 leading-tight break-words">
+            Customer Churn Dashboard
+          </h1>
           <p className="text-gray-400 mt-1 text-sm">Real time prediction churn for users</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-          <div className="bg-white border border-gray-200 px-4 py-2 rounded-lg text-sm text-gray-600 shadow-sm font-medium flex-1 sm:flex-none text-center min-w-[220px]">
+        
+        {/* Kontrol Waktu & Filter dibuat fleksibel tanpa memakan space berlebih */}
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto flex-shrink-0">
+          <div className="bg-white border border-gray-200 px-4 py-2 rounded-lg text-sm text-gray-600 shadow-sm font-medium text-center min-w-[200px] sm:min-w-[220px] flex-1 sm:flex-none flex items-center justify-center">
             {mounted ? currentTime : 'Memuat waktu...'}
           </div>
-          <FilterDropdown />
+          <div className="flex-none">
+            <FilterDropdown />
+          </div>
         </div>
       </header>
 
-      {/* KPI CARDS (DAPET DATA REAL-TIME) */}
+      {/* KPI CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mb-5 min-h-[140px]">
         {loadingStats ? (
           <div className="col-span-full flex items-center justify-center bg-white p-6 rounded-2xl border border-gray-100 shadow-sm gap-2 text-gray-400">
@@ -104,18 +111,20 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-5">
-        <div className="w-full lg:flex-1 flex flex-col gap-5">
+      <div className="flex flex-col lg:flex-row gap-5 items-start">
+        
+        {/* LEFT COLUMN */}
+        <div className="w-full lg:flex-1 min-w-0 flex flex-col gap-5">
           {/* Charts Row Placeholder */}
-          <div className="flex flex-col xl:flex-row gap-5">
-            <DashboardSection title="Churn Risk Trend" chartType="Line Chart" data={stats?.chartData} />
-            <DashboardSection title="Risk Distribution" chartType="Donut Chart" className="xl:w-[320px]" />
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+            <DashboardSection title="Churn Risk Trend" chartType="Line Chart" data={stats?.chartData} className="xl:col-span-2" />
+            <DashboardSection title="Risk Distribution" chartType="Donut Chart" className="xl:col-span-1" />
           </div>
 
-          {/* CUSTOMER PRIORITY LIST (DINAMIS & BISA KLIK VIEW) */}
+          {/* CUSTOMER PRIORITY LIST */}
           <CustomerPriorityList />
 
-          {/* Factors Section (METRIK BERAGAM) */}
+          {/* Factors Section */}
           <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
             <SectionHeader title="Why Customers Are At Risk?" subtitle="Top factors contributing to churn" linkText="Chat Bot" />
             <div className="flex items-center gap-6 overflow-x-auto pb-2 custom-scrollbar">
@@ -129,12 +138,12 @@ export default function DashboardPage() {
         </div>
 
         {/* RIGHT COLUMN */}
-        <div className="w-full lg:w-[320px] flex flex-col gap-5">
+        <div className="w-full lg:w-[320px] lg:flex-shrink-0 flex flex-col gap-5">
           
-          {/* ALERTS SECTION (SEKARANG DINAMIS) */}
-          <div className="flex-1 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+          {/* ALERTS SECTION */}
+          <div className="w-full bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col max-h-[420px]">
             <SectionHeader title="Alerts" linkText="View all" />
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 overflow-y-auto pr-1 custom-scrollbar">
               {loadingStats ? (
                 <div className="flex items-center justify-center p-6 text-gray-400 text-sm">
                   <Loader2 size={16} className="animate-spin mr-2" /> Mengecek sistem...
@@ -218,7 +227,7 @@ function formatMonthLabel(key: string) {
   return `${MONTH_ABBR_LABEL[idx]} ${y}`;
 }
 
-// Calendar-style month/year picker (tanpa nambah file baru)
+// Calendar-style month/year picker
 function MonthYearPicker({
   value,
   onChange,
@@ -235,25 +244,21 @@ function MonthYearPicker({
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Year yang lagi dilihat di kalender (bukan year value-nya)
   const initialYear = (() => {
     const y = parseInt(value?.split('-')[0] || '', 10);
     return isNaN(y) ? new Date().getFullYear() : y;
   })();
   const [viewYear, setViewYear] = useState(initialYear);
 
-  // Hitung range tahun yang ada di data
   const yearsAvailable = Array.from(availableMonths).map((m) => parseInt(m.split('-')[0], 10));
   const minYear = yearsAvailable.length ? Math.min(...yearsAvailable) : initialYear;
   const maxYear = yearsAvailable.length ? Math.max(...yearsAvailable) : initialYear;
 
-  // Sync view year sama value pas value berubah dari luar
   useEffect(() => {
     const y = parseInt(value?.split('-')[0] || '', 10);
     if (!isNaN(y)) setViewYear(y);
   }, [value]);
 
-  // Click outside buat nutup popover
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
@@ -293,7 +298,6 @@ function MonthYearPicker({
             align === 'right' ? 'right-0' : 'left-0'
           }`}
         >
-          {/* Header: tombol prev/next year */}
           <div className="flex items-center justify-between mb-4">
             <button
               type="button"
@@ -316,7 +320,6 @@ function MonthYearPicker({
             </button>
           </div>
 
-          {/* Grid 12 bulan (3 kolom x 4 baris) */}
           <div className="grid grid-cols-3 gap-2">
             {MONTH_ABBR_LABEL.map((m, i) => {
               const key = `${viewYear}-${String(i + 1).padStart(2, '0')}`;
@@ -351,15 +354,12 @@ function MonthYearPicker({
 }
 
 function DashboardSection({ title, chartType, data, className = "" }: any) {
-  // 1. Daftar bulan yang tersedia di data (udah kronologis dari backend, fullName = "YYYY-MM")
   const months: string[] = Array.isArray(data) ? data.map((d: any) => d.fullName) : [];
   const monthSet = new Set(months);
 
-  // 2. State range From/To (pakai key "YYYY-MM" langsung, lebih intuitif buat picker)
   const [fromKey, setFromKey] = useState<string>('');
   const [toKey, setToKey] = useState<string>('');
 
-  // 3. Reset range ke full pas data baru masuk
   useEffect(() => {
     if (months.length > 0) {
       setFromKey(months[0]);
@@ -368,10 +368,8 @@ function DashboardSection({ title, chartType, data, className = "" }: any) {
       setFromKey('');
       setToKey('');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [months.length, months[0], months[months.length - 1]]);
 
-  // 4. Cari index buat slicing + auto-koreksi kalau From > To
   const fromIdx = months.indexOf(fromKey);
   const toIdx = months.indexOf(toKey);
   const safeFrom = Math.min(fromIdx === -1 ? 0 : fromIdx, toIdx === -1 ? 0 : toIdx);
@@ -379,7 +377,7 @@ function DashboardSection({ title, chartType, data, className = "" }: any) {
   const displayData = Array.isArray(data) && months.length > 0 ? data.slice(safeFrom, safeTo + 1) : [];
 
   return (
-    <div className={`flex-1 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm ${className}`}>
+    <div className={`bg-white p-5 rounded-2xl border border-gray-100 shadow-sm ${className}`}>
       <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
         <h3 className="font-semibold text-gray-800 text-sm">{title}</h3>
 
