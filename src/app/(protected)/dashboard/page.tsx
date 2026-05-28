@@ -103,10 +103,38 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
-            <KpiCard title="Total Customer" value={stats?.totalActiveCustomers?.toLocaleString() || "0"} trend={8} isPositive={true} color="blue" icon={User} />
-            <KpiCard title="High Risk Customer" value={stats?.totalHighRisk?.toLocaleString() || "0"} trend={8} isPositive={false} color="red" icon={UserX} />
-            <KpiCard title="Revenue at Risk" value={`$${stats?.revenueAtRisk?.toLocaleString() || "0"}`} trend={10.2} isPositive={false} color="red" icon={DollarSign} />
-            <KpiCard title="Avg. Churn Risk Score" value={`${stats?.avgChurnScore || 0}%`} trend={8} isPositive={false} color="blue" icon={Gauge} />
+            <KpiCard 
+              title="Total Customer" 
+              value={stats?.totalActiveCustomers?.value?.toLocaleString() || "0"} 
+              trend={stats?.totalActiveCustomers?.trend || 0} 
+              isPositive={stats?.totalActiveCustomers?.isPositive} 
+              color="blue" 
+              icon={User} 
+            />
+            <KpiCard 
+              title="High Risk Customer" 
+              value={stats?.totalHighRisk?.value?.toLocaleString() || "0"} 
+              trend={stats?.totalHighRisk?.trend || 0} 
+              isPositive={stats?.totalHighRisk?.isPositive} 
+              color="red" 
+              icon={UserX} 
+            />
+            <KpiCard 
+              title="Revenue at Risk" 
+              value={`$${stats?.revenueAtRisk?.value?.toLocaleString() || "0"}`} 
+              trend={stats?.revenueAtRisk?.trend || 0} 
+              isPositive={stats?.revenueAtRisk?.isPositive} 
+              color="red" 
+              icon={DollarSign} 
+            />
+            <KpiCard 
+              title="Avg. Churn Risk Score" 
+              value={`${stats?.avgChurnScore?.value || 0}%`} 
+              trend={stats?.avgChurnScore?.trend || 0} 
+              isPositive={stats?.avgChurnScore?.isPositive} 
+              color="blue" 
+              icon={Gauge} 
+            />
           </>
         )}
       </div>
