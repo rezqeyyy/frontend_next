@@ -1,11 +1,11 @@
-// src/components/layout/Sidebar.tsx
+// C:\KULIAH\semester 6\KEEVA\frontend_next\src\components\layout\Sidebar.tsx
+
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
-import { getCurrentUser } from "@/actions/auth";
+import { useRouter } from "next/navigation";
 import SettingsModal from "./SettingsModal";
+import { useSidebar } from "@/hooks/useSidebar";
 import {
   LayoutDashboard,
   Users,
@@ -16,66 +16,35 @@ import {
   Settings,
   Menu,
   X,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 
-const COLLAPSE_KEY = "keeva.sidebar.collapsed";
+const NAV_ITEMS = [
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Customer List", href: "/customer-list", icon: Users },
+  { name: "Upload CSV", href: "/upload-csv", icon: UploadCloud },
+  { name: "Prediction Results", href: "/prediction-results", icon: PieChart },
+  { name: "Feature Importance", href: "/feature-importance", icon: FileText },
+  { name: "Revenue at Risk", href: "/revenue-at-risk", icon: BadgeDollarSign },
+];
 
 export default function Sidebar() {
-  const pathname = usePathname();
   const router = useRouter();
+  const {
+    pathname,
+    userName,
+    setUserName,
+    userPhoto,
+    setUserPhoto,
+    isSettingsOpen,
+    setIsSettingsOpen,
+    isMobileOpen,
+    setIsMobileOpen,
+    isCollapsed,
+    setIsCollapsed,
+    isAuthPage,
+  } = useSidebar();
 
-  const [userName, setUserName] = useState("Loading...");
-  const [userPhoto, setUserPhoto] = useState<string | null>(null);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
-
-  useEffect(() => {
-    try {
-      if (localStorage.getItem(COLLAPSE_KEY) === "1") setIsCollapsed(true);
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(COLLAPSE_KEY, isCollapsed ? "1" : "0");
-    } catch {}
-  }, [isCollapsed]);
-
-  useEffect(() => {
-    async function fetchUser() {
-      const user = (await getCurrentUser()) as any;
-      if (user) {
-        const name =
-          user.user_metadata?.full_name || user.email?.split("@")[0] || "User";
-        const photo = user.user_metadata?.avatar_url || null;
-        setUserName(name);
-        if (photo) setUserPhoto(photo);
-      } else {
-        setUserName("Guest");
-      }
-    }
-    fetchUser();
-  }, []);
-
-  useEffect(() => {
-    setIsMobileOpen(false);
-  }, [pathname]);
-
-  const isAuthPage =
-    pathname === "/" || pathname === "/login" || pathname === "/register";
   if (isAuthPage) return null;
-
-  const navItems = [
-    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Customer List", href: "/customer-list", icon: Users },
-    { name: "Upload CSV", href: "/upload-csv", icon: UploadCloud },
-    { name: "Prediction Results", href: "/prediction-results", icon: PieChart },
-    { name: "Feature Importance", href: "/feature-importance", icon: FileText },
-    { name: "Revenue at Risk", href: "/revenue-at-risk", icon: BadgeDollarSign },
-  ];
 
   return (
     <>
@@ -83,9 +52,7 @@ export default function Sidebar() {
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-100 px-5 flex items-center justify-between z-[40]">
         <div className="flex items-center gap-2">
           <img src="/assets/keeva.png" alt="Logo" className="h-7 w-auto" />
-          <span className="font-bold text-gray-900 text-lg tracking-tight">
-            Keeva
-          </span>
+          <span className="font-bold text-gray-900 text-lg tracking-tight">Keeva</span>
         </div>
         <button
           onClick={() => setIsMobileOpen(true)}
@@ -106,25 +73,30 @@ export default function Sidebar() {
       {/* --- MAIN SIDEBAR --- */}
       <aside
         className={`
-        fixed inset-y-0 left-0 z-[60] flex flex-col bg-white border-r border-slate-100 transition-all duration-300 ease-in-out
-        lg:translate-x-0 lg:static lg:h-screen lg:z-20 lg:shadow-none shadow-2xl
-        ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
-        ${isCollapsed ? "lg:w-[88px] w-[260px]" : "w-[260px]"}
-      `}
+          fixed inset-y-0 left-0 z-[60] flex flex-col bg-white border-r border-slate-100 transition-all duration-300 ease-in-out
+          lg:translate-x-0 lg:static lg:h-screen lg:z-20 lg:shadow-none shadow-2xl
+          ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
+          ${isCollapsed ? "lg:w-[88px] w-[260px]" : "w-[260px]"}
+        `}
       >
-        {/* FLOATING COLLAPSE TOGGLE (Desktop Only) */}
+        {/* DESKTOP TOGGLE: Menggunakan Desain 3 Strip ke Bawah */}
         <button
           onClick={() => setIsCollapsed((v) => !v)}
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           className={`
-            hidden lg:flex absolute top-8 z-30 w-8 h-8 items-center justify-center transition-all
+            hidden lg:flex absolute top-8 z-30 w-8 h-8 items-center justify-center transition-all group
             ${isCollapsed 
-              ? "-right-4 rounded-full bg-white border-2 border-slate-100 shadow-sm text-slate-600 hover:text-blue-600 hover:border-blue-100 hover:bg-blue-50" 
-              : "right-5 bg-transparent text-slate-400 hover:text-blue-600"
+              ? "-right-4 rounded-full bg-white border-2 border-slate-100 shadow-sm text-slate-400 hover:text-blue-600 hover:border-blue-100 hover:bg-blue-50" 
+              : "right-5 bg-transparent text-slate-300 hover:text-blue-600"
             }
           `}
         >
-          {isCollapsed ? <ChevronRight size={18} strokeWidth={2.5} /> : <ChevronLeft size={18} strokeWidth={2.5} />}
+          {/* GRIP HANDLE: 3 Strip Vertikal ke Bawah */}
+          <div className="flex flex-col gap-[3px] items-center justify-center">
+            <span className="w-3 h-[2px] bg-current rounded-full transition-all group-hover:scale-x-110" />
+            <span className="w-3 h-[2px] bg-current rounded-full transition-all group-hover:scale-x-110" />
+            <span className="w-3 h-[2px] bg-current rounded-full transition-all group-hover:scale-x-110" />
+          </div>
         </button>
 
         {/* LOGO AREA */}
@@ -153,7 +125,7 @@ export default function Sidebar() {
 
         {/* NAVIGATION LINKS */}
         <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto overflow-x-hidden">
-          {navItems.map((item) => {
+          {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
             

@@ -1,99 +1,25 @@
-// src/app/customer-list/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { Search, Filter, Trash2, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { getCurrentUser } from '@/actions/auth'; 
+import { useCustomers } from '@/hooks/useCustomers';
 
 export default function CustomerListPage() {
   const router = useRouter();
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState('');
-
-  const [itemsPerPage, setItemsPerPage] = useState<number | 'all'>(10);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
-
-  const fetchCustomers = async () => {
-    setLoading(true);
-    setErrorMsg('');
-
-    try {
-      // 1. Verifikasi User (Custom Auth)
-      const user = await getCurrentUser() as any;
-      if (!user || !user.id) {
-        setErrorMsg('Gagal verifikasi session. Silakan login ulang.');
-        setLoading(false);
-        return;
-      }
-
-      // 2. Cari semua folder (datasets) milik user ini
-      const { data: userDatasets, error: dsError } = await supabase
-        .from('datasets')
-        .select('id')
-        .eq('user_id', user.id);
-
-      if (dsError) throw dsError;
-
-      const datasetIds = userDatasets?.map(d => d.id) || [];
-
-      // Kalau user belum punya dataset sama sekali, langsung set kosong
-      if (datasetIds.length === 0) {
-        setCustomers([]);
-        setLoading(false);
-        return;
-      }
-
-      // 3. Tarik data pelanggan HANYA dari dataset milik user tersebut
-      const { data, error } = await supabase
-        .from('customers')
-        .select('*')
-        .in('dataset_id', datasetIds) // FILTER MANUAL PENGGANTI RLS
-        .order('customer_id', { ascending: true })
-        .limit(5000); 
-
-      if (error) throw error;
-      
-      setCustomers(data || []);
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Terjadi kesalahan saat mengambil data.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (customerId: string) => {
-    const isConfirm = window.confirm(`Yakin ingin menghapus data pelanggan ${customerId}?`);
-    if (!isConfirm) return;
-
-    // Menghapus menggunakan customer_id
-    const { error } = await supabase
-      .from('customers')
-      .delete()
-      .eq('customer_id', customerId);
-
-    if (error) {
-      alert(`Gagal menghapus data: ${error.message}`);
-    } else {
-      setCustomers((prev) => prev.filter((cust) => cust.customer_id !== customerId));
-    }
-  };
-
-  // Filter pencarian sederhana
-  const filteredCustomers = customers.filter(cust => 
-    cust.customer_id?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const itemsLimit = itemsPerPage === 'all' ? filteredCustomers.length : itemsPerPage;
-  const totalPages = Math.ceil(filteredCustomers.length / (itemsLimit || 1));
-  const displayedData = filteredCustomers.slice((currentPage - 1) * itemsLimit, currentPage * itemsLimit);
+  const {
+    loading,
+    errorMsg,
+    searchTerm,
+    handleSearch,
+    itemsPerPage,
+    handleItemsPerPage,
+    currentPage,
+    handlePageChange,
+    filteredCustomers,
+    totalPages,
+    displayedData,
+    handleDelete
+  } = useCustomers();
 
   if (errorMsg) return <div className="p-4 sm:p-8 text-red-500 font-medium">Error: {errorMsg}</div>;
 
@@ -114,10 +40,7 @@ export default function CustomerListPage() {
               type="text" 
               placeholder="Search customer ID..." 
               value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1);
-              }}
+              onChange={(e) => handleSearch(e.target.value)}
               className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm w-full sm:w-[250px] focus:outline-none focus:border-blue-500"
             />
           </div>
@@ -133,10 +56,7 @@ export default function CustomerListPage() {
           <span>Show</span>
           <select 
             value={itemsPerPage} 
-            onChange={(e) => {
-              setItemsPerPage(e.target.value === 'all' ? 'all' : Number(e.target.value));
-              setCurrentPage(1);
-            }} 
+            onChange={(e) => handleItemsPerPage(e.target.value)} 
             className="border border-gray-200 rounded-md px-2 py-1 focus:outline-none bg-white"
           >
             <option value={10}>10</option>
@@ -183,9 +103,7 @@ export default function CustomerListPage() {
                     <td className="py-4 text-center">{cust.total_users ?? 0}</td>
                     <td className="py-4 text-center text-gray-600">{cust.monthly_usage_hrs?.toFixed(1) ?? '0'}</td>
                     <td className="py-4 text-center text-gray-600">{cust.inactivity_days ?? 0} days</td>
-                    <td className="py-4 text-center font-medium text-gray-800">
-                      ${cust.sum_payment_value?.toLocaleString() ?? '0'}
-                    </td>
+                    <td className="py-4 text-center font-medium text-gray-800">${cust.sum_payment_value?.toLocaleString() ?? '0'}</td>
                     <td className="py-4 text-center text-gray-600">{cust.average_nps_score ?? '-'}</td>
                     <td className="py-4 text-center text-gray-600">{cust.count_ticket_id ?? 0}</td>
                     <td className="py-4 text-center text-gray-600">{cust.subscription_age?.toFixed(0) ?? '-'}</td>
@@ -221,7 +139,7 @@ export default function CustomerListPage() {
             </p>
             <div className="flex items-center gap-2">
               <button 
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
+                onClick={() => handlePageChange('prev')} 
                 disabled={currentPage === 1} 
                 className="p-1.5 rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition"
               >
@@ -231,7 +149,7 @@ export default function CustomerListPage() {
                 Page {currentPage} of {totalPages}
               </span>
               <button 
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
+                onClick={() => handlePageChange('next')} 
                 disabled={currentPage === totalPages} 
                 className="p-1.5 rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition"
               >

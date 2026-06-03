@@ -27,17 +27,16 @@ export default function FeatureImportanceChart({ data }: { data?: any[] }) {
           Feature Impact Score
         </h3>
         <p className="text-xs text-gray-400 font-medium">
-          Distribusi kekuatan prediksi masing-masing fitur
+          Distribution of the predictive power of each feature
         </p>
       </div>
 
       <div className="flex-1 w-full">
         {!hasData ? (
           <div className="h-full w-full flex flex-col items-center justify-center text-center px-6 py-12 text-gray-400">
-            <p className="text-sm font-medium">Belum ada data fitur</p>
+            <p className="text-sm font-medium">No feature data available</p>
             <p className="text-xs mt-1">
-              Upload dataset di halaman Upload CSV untuk melihat kekuatan
-              prediksi tiap fitur.
+              Upload a dataset on the CSV Upload page to view the predictive power of each feature.
             </p>
           </div>
         ) : (

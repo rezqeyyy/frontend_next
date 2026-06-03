@@ -1,203 +1,33 @@
-// src/app/prediction-results/page.tsx
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { supabase } from '@/lib/supabase';
-import { ArrowUp, ArrowDown, Search, Filter, ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
+import { Search, Filter, ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import InlineChat from '@/components/chat/InlineChat'; 
-import { getCurrentUser } from '@/actions/auth'; 
+import { usePredictionResults } from '@/hooks/usePredictionResults';
+import { PredictionRow } from '@/components/prediction/PredictionRow';
 
 export default function PredictionResultsPage() {
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState('');
+  const {
+    filteredCustomers,
+    searchTerm,
+    selectedRank,
+    isLoading,
+    errorMessage,
+    itemsPerPage,
+    currentPage,
+    isPredicting,
+    predictProgress,
+    predictError,
+    totalPages,
+    displayedData,
+    handlePageChange,
+    handleItemsPerPageChange,
+    handleSearchChange,
+    handleRankFilterChange
+  } = usePredictionResults();
 
-  const [itemsPerPage, setItemsPerPage] = useState<number | 'all'>(10);
-  const [currentPage, setCurrentPage] = useState(1);
-
-  // State untuk Progress Bar & Error Handling
-  const [isPredicting, setIsPredicting] = useState(false);
-  const [predictProgress, setPredictProgress] = useState(0);
-  const [predictError, setPredictError] = useState(false);
-  
-  const isPredictingRef = useRef(false);
-
-  useEffect(() => {
-    fetchResults();
-    autoPredictAllDatabase();
-
-    // SENSOR BANGUN TIDUR: Jalanin ulang kalau user balik ke tab ini dan proses sempet mati
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        if (!isPredictingRef.current && !predictError) {
-          autoPredictAllDatabase();
-        }
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [predictError]);
-
-  const fetchResults = async () => {
-    setLoading(true);
-    setErrorMsg('');
-
-    try {
-      const user = await getCurrentUser() as any;
-      if (!user || !user.id) {
-        setErrorMsg('Gagal verifikasi session. Silakan login ulang.');
-        setLoading(false);
-        return;
-      }
-
-      const { data: userDatasets, error: dsError } = await supabase
-        .from('datasets')
-        .select('id')
-        .eq('user_id', user.id);
-
-      if (dsError) throw dsError;
-
-      const datasetIds = userDatasets?.map(d => d.id) || [];
-
-      if (datasetIds.length === 0) {
-        setCustomers([]);
-        setLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('customers')
-        .select('*')
-        .in('dataset_id', datasetIds) 
-        .order('churn_risk_score', { ascending: false })
-        .limit(5000);
-
-      if (error) throw error;
-      setCustomers(data || []);
-
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Gagal menarik data prediksi.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const runPredictionSilent = async (customerData: any) => {
-    try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-      
-      const response = await fetch(`${API_URL}/predict`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(customerData), 
-      });
-
-      if (!response.ok) return false;
-      const predictionResult = await response.json();
-
-      const newScore = Math.round(predictionResult.risk_score);
-      const newRank = predictionResult.risk_category;
-      const newRevenue = Math.round(predictionResult.revenue_at_risk);
-
-      const { error: supabaseError } = await supabase
-        .from('customers')
-        .update({
-          churn_risk_score: newScore,
-          rank_level: newRank,
-          revenue_at_risk: newRevenue,
-        })
-        .eq('id', customerData.id); // Pake ID unik database buat update biar akurat
-
-      if (supabaseError) throw supabaseError;
-      
-      setCustomers((prevData) => {
-        const updatedData = prevData.map((c) => 
-          c.id === customerData.id 
-            ? { ...c, churn_risk_score: newScore, rank_level: newRank, revenue_at_risk: newRevenue }
-            : c
-        );
-        return updatedData.sort((a, b) => (b.churn_risk_score || 0) - (a.churn_risk_score || 0));
-      });
-
-      return true;
-
-    } catch (error) {
-      console.error(`Gagal auto-predict untuk ID: ${customerData.id}:`, error);
-      return false; 
-    }
-  };
-
-  const autoPredictAllDatabase = async () => {
-    if (isPredictingRef.current) return; 
-
-    try {
-      setPredictError(false);
-
-      const user = await getCurrentUser() as any;
-      if (!user || !user.id) return;
-
-      const { data: userDatasets } = await supabase.from('datasets').select('id').eq('user_id', user.id);
-      const datasetIds = userDatasets?.map(d => d.id) || [];
-      if (datasetIds.length === 0) return;
-      
-      const { count: totalDataCount, error: countError } = await supabase
-        .from('customers')
-        .select('*', { count: 'exact', head: true })
-        .in('dataset_id', datasetIds); 
-
-      const { data: allUnpredicted, error } = await supabase
-        .from('customers')
-        .select('*')
-        .in('dataset_id', datasetIds) 
-        .or('rank_level.is.null,rank_level.eq.-');
-
-      if (error || countError) throw error || countError;
-      
-      if (!allUnpredicted || allUnpredicted.length === 0) return;
-
-      isPredictingRef.current = true;
-      setIsPredicting(true);
-
-      const total = totalDataCount || 1;
-      let completed = total - allUnpredicted.length; 
-      setPredictProgress(Math.round((completed / total) * 100));
-
-      for (let i = 0; i < allUnpredicted.length; i++) {
-        if (!isPredictingRef.current) break;
-
-        const success = await runPredictionSilent(allUnpredicted[i]);
-        
-        if (!success) {
-          throw new Error(`Gagal memprediksi data dengan ID: ${allUnpredicted[i].id}`);
-        }
-        
-        completed++;
-        const currentPercentage = Math.round((completed / total) * 100);
-        setPredictProgress(currentPercentage);
-      }
-
-      if (isPredictingRef.current) {
-        setTimeout(() => {
-          setIsPredicting(false);
-          isPredictingRef.current = false;
-          fetchResults();
-        }, 1000);
-      }
-
-    } catch (err) {
-      console.error("Error saat mass predict:", err);
-      setPredictError(true); 
-      isPredictingRef.current = false;
-    }
-  };
-
-  const itemsLimit = itemsPerPage === 'all' ? customers.length : itemsPerPage;
-  const totalPages = Math.ceil(customers.length / (itemsLimit || 1));
-  const displayedData = customers.slice((currentPage - 1) * itemsLimit, currentPage * itemsLimit);
-
-  if (errorMsg) return <div className="p-4 sm:p-8 text-red-500 font-medium">Error: {errorMsg}</div>;
+  if (errorMessage) {
+    return <div className="p-4 sm:p-8 text-red-500 font-medium">Error: {errorMessage}</div>;
+  }
 
   return (
     <div className="p-4 pt-24 sm:p-6 sm:pt-28 lg:p-8 max-w-[1600px] mx-auto text-gray-800 w-full overflow-hidden">
@@ -210,21 +40,38 @@ export default function PredictionResultsPage() {
         </div>
         
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+          {/* SEARCH INPUT */}
           <div className="relative w-full sm:w-auto">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input 
               type="text" 
               placeholder="Search customer ID..." 
+              value={searchTerm}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm w-full sm:w-[250px] focus:outline-none focus:border-blue-500"
             />
           </div>
-          <button className="bg-white border border-gray-200 px-4 py-2 rounded-lg text-sm text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50 transition">
-            <Filter size={16} /> <span>Filter</span>
-          </button>
+          
+          {/* RANK LEVEL FILTER DROPDOWN */}
+          <div className="relative w-full sm:w-auto">
+            <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
+            <select
+              value={selectedRank}
+              onChange={(e) => handleRankFilterChange(e.target.value)}
+              className="pl-9 pr-8 py-2 border border-gray-200 rounded-lg text-sm bg-white text-gray-600 focus:outline-none focus:border-blue-500 cursor-pointer w-full sm:w-auto appearance-none"
+            >
+              <option value="all">All Ranks</option>
+              <option value="High">High Risk</option>
+              <option value="Medium">Medium Risk</option>
+              <option value="Low">Low Risk</option>
+            </select>
+            {/* Custom mini-indicator chevron inside select natively */}
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-[10px]">▼</div>
+          </div>
         </div>
       </header>
 
-      {/* TAMPILAN PROGRESS BAR */}
+      {/* BATCH PROGRESS BAR PANEL */}
       {isPredicting && (
         <div className={`mb-6 border rounded-xl p-4 flex flex-col gap-3 transition-colors ${predictError ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-100'}`}>
           <div className={`flex justify-between items-center text-sm font-medium ${predictError ? 'text-red-800' : 'text-blue-800'}`}>
@@ -235,8 +82,8 @@ export default function PredictionResultsPage() {
                 <Loader2 size={16} className="animate-spin text-blue-600" />
               )}
               {predictError 
-                ? "Gagal memprediksi sisa data. Cek koneksi backend atau console." 
-                : "Sedang memprediksi sisa data otomatis... (Bisa ditinggal pindah tab)"}
+                ? "Failed to predict remaining records. Please check the backend service connection." 
+                : "Processing automatic model predictions... (You may safely switch tabs)"}
             </span>
             <span>{predictProgress}%</span>
           </div>
@@ -249,16 +96,13 @@ export default function PredictionResultsPage() {
         </div>
       )}
 
-      {/* KONTROL PAGINATION ATAS */}
+      {/* TOP DATATABLE FILTERS */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <span>Show</span>
           <select 
             value={itemsPerPage} 
-            onChange={(e) => {
-              setItemsPerPage(e.target.value === 'all' ? 'all' : Number(e.target.value));
-              setCurrentPage(1);
-            }} 
+            onChange={(e) => handleItemsPerPageChange(e.target.value)} 
             className="border border-gray-200 rounded-md px-2 py-1 focus:outline-none bg-white"
           >
             <option value={10}>10</option>
@@ -270,11 +114,11 @@ export default function PredictionResultsPage() {
           <span>entries</span>
         </div>
         <div className="text-sm text-gray-500 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-          Total Analyzed: <span className="font-semibold text-gray-800">{customers.length}</span>
+          Total Analyzed: <span className="font-semibold text-gray-800">{filteredCustomers.length}</span>
         </div>
       </div>
 
-      {/* AREA TABEL */}
+      {/* TABLE ELEMENT VIEW */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden w-full">
         <div className="overflow-x-auto p-4 md:p-5">
           <table className="w-full text-left text-sm min-w-[1200px]">
@@ -289,33 +133,32 @@ export default function PredictionResultsPage() {
               </tr>
             </thead>
             <tbody className="text-gray-700">
-              {loading ? (
-                <tr><td colSpan={6} className="py-8 text-center text-gray-400">Memuat data prediksi Anda...</td></tr>
+              {isLoading ? (
+                <tr><td colSpan={6} className="py-8 text-center text-gray-400">Loading prediction metrics...</td></tr>
               ) : displayedData.length > 0 ? (
                 displayedData.map((cust, idx) => (
                   <PredictionRow 
-                    // FIX: Gunakan id database (UUID) atau gabungan index biar React gak rewel
                     key={cust.id || `${cust.customer_id}-${idx}`} 
-                    no={(currentPage - 1) * (itemsPerPage === 'all' ? customers.length : itemsPerPage) + idx + 1} 
+                    no={(currentPage - 1) * (itemsPerPage === 'all' ? filteredCustomers.length : itemsPerPage) + idx + 1} 
                     data={cust} 
                   />
                 ))
               ) : (
-                <tr><td colSpan={6} className="py-8 text-center text-gray-400">Belum ada data untuk akun ini.</td></tr>
+                <tr><td colSpan={6} className="py-8 text-center text-gray-400">No records found matching the criteria.</td></tr>
               )}
             </tbody>
           </table>
         </div>
 
-        {/* KONTROL PAGINATION BAWAH */}
+        {/* BOTTOM PAGINATION CONTROLS */}
         {itemsPerPage !== 'all' && totalPages > 1 && (
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 md:px-5 py-4 border-t border-gray-50 bg-gray-50/50">
             <p className="text-xs md:text-sm text-gray-500 text-center sm:text-left">
-              Showing {(currentPage - 1) * Number(itemsPerPage) + 1} to {Math.min(currentPage * Number(itemsPerPage), customers.length)} of {customers.length} entries
+              Showing {(currentPage - 1) * Number(itemsPerPage) + 1} to {Math.min(currentPage * Number(itemsPerPage), filteredCustomers.length)} of {filteredCustomers.length} entries
             </p>
             <div className="flex items-center gap-2">
               <button 
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
+                onClick={() => handlePageChange(Math.max(1, currentPage - 1))} 
                 disabled={currentPage === 1} 
                 className="p-1.5 rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition"
               >
@@ -325,7 +168,7 @@ export default function PredictionResultsPage() {
                 Page {currentPage} of {totalPages}
               </span>
               <button 
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
+                onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))} 
                 disabled={currentPage === totalPages} 
                 className="p-1.5 rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition"
               >
@@ -336,58 +179,13 @@ export default function PredictionResultsPage() {
         )}
       </div>
 
+      {/* AI ASSISTANT BOTTOM SECTION */}
       <div className="mt-10 lg:mt-14 w-full">
-        <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">Tanya AI Assistant</h2>
-        <p className="text-sm text-gray-500 mb-6">Punya pertanyaan tentang data prediksi di atas? Diskusikan langsung dengan AI KEEVA di sini.</p>
-        
-        {/* Oper data tabel yang sedang tampil ke dalam komponen Chat */}
+        <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">Ask AI Assistant</h2>
+        <p className="text-sm text-gray-500 mb-6">Have questions about the analytical prediction metrics displayed above? Discuss insights immediately with KEEVA AI below.</p>
         <InlineChat tableData={displayedData} />
       </div>
 
     </div>
-  );
-}
-
-// Sub-komponen PredictionRow
-function PredictionRow({ no, data }: any) {
-  const { 
-    customer_id, 
-    churn_risk_score: score, 
-    rank_level: rank, 
-    revenue_at_risk
-  } = data;
-  
-  const rankColors: any = { 
-    High: 'bg-red-100 text-red-600', 
-    Medium: 'bg-orange-100 text-orange-600', 
-    Low: 'bg-green-100 text-green-600' 
-  };
-
-  const barColor = score > 70 ? 'bg-red-500' : score > 40 ? 'bg-yellow-400' : 'bg-green-500';
-
-  return (
-    <tr className="border-b border-gray-50 hover:bg-gray-50/50 transition">
-      <td className="py-4 px-2">{no}</td>
-      <td className="py-4 font-semibold text-gray-800">{customer_id ?? '-'}</td>
-      <td className="py-4">
-        <div className="flex items-center justify-center gap-3">
-          <span className="font-medium w-6 text-center">{score ?? 0}</span>
-          {score > 50 ? <ArrowUp size={12} className="text-red-500" /> : <ArrowDown size={12} className="text-green-500" />}
-          <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden flex-shrink-0">
-            <div className={`h-full ${barColor}`} style={{ width: `${score ?? 0}%` }} />
-          </div>
-        </div>
-      </td>
-      <td className="py-4 text-center">
-        <span className={`px-3 py-1 rounded-md text-[11px] font-semibold ${rankColors[rank] || 'bg-gray-100 text-gray-600'}`}>
-          {rank ?? '-'}
-        </span>
-      </td>
-      <td className="py-4 text-center font-semibold text-gray-800">
-        ${revenue_at_risk?.toLocaleString() ?? '0'}
-      </td>
-      <td className="py-4 text-center">
-      </td>
-    </tr>
   );
 }

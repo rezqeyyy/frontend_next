@@ -35,7 +35,7 @@ export default function RevenueAtRiskPage() {
     return (
       <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center p-8">
         <Loader2 size={40} className="animate-spin text-indigo-500 mb-4" />
-        <p className="text-gray-500 font-medium">Memuat data revenue...</p>
+        <p className="text-gray-500 font-medium">Loading revenue data...</p>
       </div>
     );
   }

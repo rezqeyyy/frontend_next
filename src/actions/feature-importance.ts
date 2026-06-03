@@ -21,9 +21,9 @@ const FEATURES: FeatureMeta[] = [
     shortName: "support_tickets",
     iconName: "Headset",
     color: "#6366f1",
-    desc: "Volume tiket tinggi menandakan ketidakpuasan dan frustrasi.",
-    impact: "Tinggi: Banyak komplain dan antrean dukungan teknis.",
-    recom: "Prioritaskan resolusi tiket dan penjangkauan proaktif.",
+    desc: "High ticket volume indicates customer dissatisfaction and frustration.",
+    impact: "High: Numerous complaints and technical support queues.",
+    recom: "Prioritize ticket resolution and initiate proactive outreach.",
   },
   {
     key: "monthly_usage_hrs",
@@ -31,9 +31,9 @@ const FEATURES: FeatureMeta[] = [
     shortName: "usage_hrs",
     iconName: "Activity",
     color: "#8b5cf6",
-    desc: "Jam pemakaian bulanan mencerminkan keterikatan pengguna.",
-    impact: "Menengah: Pengguna jarang menggunakan fitur utama.",
-    recom: "Kirim email retensi atau tawarkan tur fitur baru.",
+    desc: "Monthly usage hours reflect user engagement and product stickiness.",
+    impact: "Medium: Users are rarely engaging with core features.",
+    recom: "Send retention emails or offer guided tours of new features.",
   },
   {
     key: "inactivity_days",
@@ -41,9 +41,9 @@ const FEATURES: FeatureMeta[] = [
     shortName: "inactivity_days",
     iconName: "Clock",
     color: "#f59e0b",
-    desc: "Hari tanpa aktivitas adalah sinyal awal churn yang kuat.",
-    impact: "Tinggi: Customer kehilangan habit penggunaan produk.",
-    recom: "Jalankan kampanye re-engagement dan kirim notifikasi personal.",
+    desc: "Days spent without activity serve as a strong early signal of customer churn.",
+    impact: "High: Customers are completely losing their product usage habits.",
+    recom: "Launch a re-engagement campaign and send personalized notifications.",
   },
   {
     key: "average_nps_score",
@@ -51,9 +51,9 @@ const FEATURES: FeatureMeta[] = [
     shortName: "nps_score",
     iconName: "Smile",
     color: "#10b981",
-    desc: "NPS rendah berkorelasi langsung dengan niat berhenti berlangganan.",
-    impact: "Menengah: Sentimen pelanggan menurun.",
-    recom: "Follow up detractor dan minta feedback terstruktur.",
+    desc: "A low NPS correlates directly with a customer's intention to unsubscribe.",
+    impact: "Medium: Declining customer sentiment.",
+    recom: "Follow up with detractors and request structured feedback.",
   },
   {
     key: "feature_adoption_pct",
@@ -61,9 +61,9 @@ const FEATURES: FeatureMeta[] = [
     shortName: "feature_adoption",
     iconName: "Zap",
     color: "#3b82f6",
-    desc: "Tingkat adopsi fitur kunci menunjukkan nilai yang diterima.",
-    impact: "Menengah: Customer belum mendapat full value produk.",
-    recom: "Aktifkan in-app guidance dan training onboarding.",
+    desc: "Core feature adoption rates demonstrate the realized value of the product.",
+    impact: "Medium: Customers have not yet realized the full value of the product.",
+    recom: "Enable in-app guidance and provide focused onboarding training sessions.",
   },
   {
     key: "average_payment_delay",
@@ -71,9 +71,9 @@ const FEATURES: FeatureMeta[] = [
     shortName: "payment_delay",
     iconName: "Wallet",
     color: "#ef4444",
-    desc: "Rata-rata keterlambatan pembayaran mengindikasikan masalah niat lanjut.",
-    impact: "Tinggi: Risiko gagal bayar dan churn finansial.",
-    recom: "Kirim reminder pembayaran dan opsi pembayaran fleksibel.",
+    desc: "Average payment delays indicate potential issues with retention intent.",
+    impact: "High: Risk of invoice default and financial subscription churn.",
+    recom: "Send timely payment reminders and offer flexible payment options.",
   },
   {
     key: "subscription_age",
@@ -81,9 +81,9 @@ const FEATURES: FeatureMeta[] = [
     shortName: "subscription_age",
     iconName: "Calendar",
     color: "#14b8a6",
-    desc: "Usia langganan berkaitan dengan loyalitas pelanggan.",
-    impact: "Rendah-Menengah: Pelanggan baru lebih rentan churn.",
-    recom: "Berikan onboarding khusus untuk pelanggan di bawah 3 bulan.",
+    desc: "Subscription age relates closely to customer loyalty and account maturity.",
+    impact: "Low-Medium: Newer customers are substantially more susceptible to churn.",
+    recom: "Provide tailored onboarding support for customers under 3 months old.",
   },
   {
     key: "sum_payment_value",
@@ -91,9 +91,9 @@ const FEATURES: FeatureMeta[] = [
     shortName: "payment_value",
     iconName: "DollarSign",
     color: "#0ea5e9",
-    desc: "Total nilai pembayaran menggambarkan komitmen finansial.",
-    impact: "Menengah: Pelanggan high-value memiliki revenue-at-risk besar.",
-    recom: "Tugaskan account manager khusus untuk segmen high value.",
+    desc: "Total payment value reflects overall customer financial commitment.",
+    impact: "Medium: High-value accounts present significant revenue at risk.",
+    recom: "Assign a dedicated account manager to look after high-value segments.",
   },
   {
     key: "engagement_score",
@@ -101,9 +101,9 @@ const FEATURES: FeatureMeta[] = [
     shortName: "engagement",
     iconName: "TrendingUp",
     color: "#a855f7",
-    desc: "Skor keterlibatan agregat dari aktivitas produk.",
-    impact: "Tinggi: Skor rendah hampir selalu mendahului churn.",
-    recom: "Buat playbook re-engagement berbasis skor.",
+    desc: "An aggregate engagement score derived from various product activity metrics.",
+    impact: "High: Low engagement scores almost always precede a customer churn event.",
+    recom: "Build a standardized, score-based customer re-engagement playbook.",
   },
   {
     key: "loyalty_score",
@@ -111,9 +111,9 @@ const FEATURES: FeatureMeta[] = [
     shortName: "loyalty",
     iconName: "Award",
     color: "#f97316",
-    desc: "Indikator loyalitas berdasarkan retensi historis.",
-    impact: "Menengah: Customer dengan loyalty rendah cepat berpindah.",
-    recom: "Tawarkan program reward dan benefit eksklusif.",
+    desc: "A loyalty indicator based on historical account retention and tenure data.",
+    impact: "Medium: Customers with low loyalty ratings are quick to switch competitors.",
+    recom: "Offer reward programs and exclusive value-add membership benefits.",
   },
   {
     key: "low_usage_flag",
@@ -121,9 +121,9 @@ const FEATURES: FeatureMeta[] = [
     shortName: "low_usage",
     iconName: "AlertTriangle",
     color: "#eab308",
-    desc: "Flag biner pemakaian di bawah ambang minimum.",
-    impact: "Menengah: Sinyal awal akun yang tidak aktif.",
-    recom: "Trigger kampanye otomatis ketika flag aktif.",
+    desc: "A binary flag indicating that usage falls below the defined minimum threshold.",
+    impact: "Medium: An early warning indicator pointing to an inactive user account.",
+    recom: "Trigger automated re-engagement email campaigns as soon as the flag is active.",
   },
   {
     key: "late_payment_flag",
@@ -131,9 +131,9 @@ const FEATURES: FeatureMeta[] = [
     shortName: "late_payment",
     iconName: "AlertCircle",
     color: "#dc2626",
-    desc: "Flag pelanggan yang pernah telat membayar.",
-    impact: "Tinggi: Indikator kuat niat berhenti berlangganan.",
-    recom: "Lakukan retensi proaktif sebelum siklus tagihan berikutnya.",
+    desc: "A tracking flag indicating customers who have previously paid bills late.",
+    impact: "High: A strong predictable indicator of intent to unsubscribe.",
+    recom: "Perform proactive retention outreach before the next billing cycle begins.",
   },
 ];
 
@@ -180,7 +180,7 @@ export async function fetchFeatureImportanceStats() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) throw new Error("Sesi habis.");
+    if (!user) throw new Error("Session expired.");
 
     const { data: userDatasets } = await supabase
       .from("datasets")

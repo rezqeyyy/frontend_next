@@ -10,10 +10,10 @@ interface InlineChatProps {
 
 // Daftar pertanyaan rekomendasi
 const RECOMMENDED_QUESTIONS = [
-  "Siapa customer yang paling berisiko churn bulan ini?",
-  "Apa faktor utama penyebab churn dari data ini?",
-  "Tampilkan ringkasan data customer saat ini.",
-  "Bagaimana cara mempertahankan customer dengan risiko tinggi?"
+  "Which customer have a high risk of churning?",
+  "What are the main factors causing churn based on this data?",
+  "Show a summary of current customer data.",
+  "How can we retain high-risk customers?"
 ];
 
 export default function InlineChat({ tableData = [] }: InlineChatProps) {
@@ -77,7 +77,7 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
               <p className="text-sm text-gray-500 max-w-sm">
-                Sistem KEEVA siap membantu. Pilih pertanyaan di bawah atau ketik pertanyaan Anda sendiri.
+                The KEEVA system is ready to help. Select a question below or type your own.
               </p>
             </div>
 
@@ -126,7 +126,7 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Tulis pesan untuk AI..."
+          placeholder="Type a message or select a recommended question..."
           className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white transition-all text-sm"
           disabled={isLoading}
         />
