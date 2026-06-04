@@ -1,3 +1,5 @@
+// src/hooks/usePredictionResults.ts
+
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { getCurrentUser } from '@/actions/auth';
 import { predictionService, CustomerData } from '@/services/predictionService';

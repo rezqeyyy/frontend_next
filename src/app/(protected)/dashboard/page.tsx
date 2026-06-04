@@ -1,3 +1,5 @@
+// src/app/(protected)/dashboard/page.tsx
+
 'use client';
 
 import {
@@ -28,7 +30,7 @@ import { InsightCard } from '@/components/dashboard/InsightCard';
 
 export default function DashboardPage() {
   const { currentTime, mounted } = useCurrentTime();
-  const { stats, loadingStats } = useDashboardStats(); 
+  const { stats, loadingStats, riskDistributionData } = useDashboardStats(); 
 
   return (
     <div className="p-4 pt-24 sm:pt-28 md:pt-16 lg:pt-10 sm:p-6 lg:p-8 max-w-[1600px] mx-auto text-gray-800 overflow-x-hidden">
@@ -48,7 +50,6 @@ export default function DashboardPage() {
           </div>
 
           {/* FILTER */}
-          
           {/* <div className="flex-none">
             <FilterDropdown />
           </div> */}
@@ -79,7 +80,14 @@ export default function DashboardPage() {
         <div className="w-full lg:flex-1 min-w-0 flex flex-col gap-5">
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
             <DashboardSection title="Churn Risk Trend" chartType="Line Chart" data={stats?.chartData} className="xl:col-span-2" />
-            <DashboardSection title="Risk Distribution" chartType="Donut Chart" className="xl:col-span-1" />
+            
+            {/* BAGIAN YANG DIPERBAIKI: Menambahkan props data dari stats */}
+            <DashboardSection 
+              title="Risk Distribution" 
+              chartType="Donut Chart" 
+              data={riskDistributionData}
+              className="xl:col-span-1" 
+            />
           </div>
           <CustomerPriorityList />
         </div>

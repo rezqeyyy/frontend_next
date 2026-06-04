@@ -25,3 +25,11 @@ export interface Alert {
   description: string;
   time: string;
 }
+
+export interface RiskData {
+  id: string;
+  label: string;
+  value: number;
+  percentage: number;
+  color: string;
+}
