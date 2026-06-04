@@ -46,9 +46,13 @@ export default function DashboardPage() {
           <div className="bg-white border border-gray-200 px-4 py-2 rounded-lg text-sm text-gray-600 shadow-sm font-medium text-center min-w-[200px] sm:min-w-[220px] flex-1 sm:flex-none flex items-center justify-center">
             {mounted ? currentTime : 'Memuat waktu...'}
           </div>
-          <div className="flex-none">
+
+          {/* FILTER */}
+          
+          {/* <div className="flex-none">
             <FilterDropdown />
-          </div>
+          </div> */}
+
         </div>
       </header>
 

@@ -1,14 +1,22 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ChatMessage } from '@/types/chat';
 import { sendChatMessage } from '@/services/chatService';
+import ReactMarkdown from 'react-markdown';
+import { Trash2, Plus, MessageSquare, AlertTriangle, Copy, Check } from 'lucide-react';
 
 interface InlineChatProps {
   tableData?: any[];
 }
 
-// Daftar pertanyaan rekomendasi
+interface ChatSession {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  updatedAt: number;
+}
+
 const RECOMMENDED_QUESTIONS = [
   "Which customer have a high risk of churning?",
   "What are the main factors causing churn based on this data?",
@@ -17,22 +25,166 @@ const RECOMMENDED_QUESTIONS = [
 ];
 
 export default function InlineChat({ tableData = [] }: InlineChatProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // === STATE MULTI-SESSION ===
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  
+  // === STATE MODAL & COPY ===
+  const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // === REFS ===
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  // === FITUR RESIZE SIDEBAR ===
+  const [sidebarWidth, setSidebarWidth] = useState(250); 
+  const isResizing = useRef(false);
+
+  const startResizing = useCallback(() => {
+    isResizing.current = true;
+    document.body.style.userSelect = 'none';
+  }, []);
+
+  const stopResizing = useCallback(() => {
+    isResizing.current = false;
+    document.body.style.userSelect = 'auto';
+  }, []);
+
+  const resize = useCallback((mouseMoveEvent: MouseEvent) => {
+    if (isResizing.current && containerRef.current) {
+      const containerLeft = containerRef.current.getBoundingClientRect().left;
+      const newWidth = mouseMoveEvent.clientX - containerLeft;
+      
+      if (newWidth >= 150 && newWidth <= 500) {
+        setSidebarWidth(newWidth);
+      }
+    }
+  }, []);
 
   useEffect(() => {
-    scrollToBottom();
+    window.addEventListener('mousemove', resize);
+    window.addEventListener('mouseup', stopResizing);
+    return () => {
+      window.removeEventListener('mousemove', resize);
+      window.removeEventListener('mouseup', stopResizing);
+    };
+  }, [resize, stopResizing]);
+
+  // === DATA SESI AKTIF ===
+  const currentSession = sessions.find(s => s.id === currentSessionId);
+  const messages = currentSession?.messages || [];
+
+  // === LOCAL STORAGE & INITIAL LOAD ===
+  useEffect(() => {
+    const savedSessions = localStorage.getItem('keeva_chat_sessions');
+    let parsedSessions: ChatSession[] = [];
+    
+    if (savedSessions) {
+      // Ambil history lama, tapi HAPUS sesi yang belum ada pesannya (biar sidebar bersih)
+      parsedSessions = JSON.parse(savedSessions).filter((s: ChatSession) => s.messages.length > 0);
+    }
+
+    // Selalu buat otomatis 1 sesi baru setiap kali halaman direfresh / baru login
+    const newSessionId = Date.now().toString();
+    const newSession: ChatSession = {
+      id: newSessionId,
+      title: 'Percakapan Baru',
+      messages: [],
+      updatedAt: Date.now(),
+    };
+
+    // Pasang sesi kosong tersebut di urutan paling atas
+    setSessions([newSession, ...parsedSessions]);
+    setCurrentSessionId(newSessionId);
+  }, []);
+
+  // Simpan update chat ke LocalStorage setiap ada perubahan
+  useEffect(() => {
+    if (sessions.length > 0) {
+      localStorage.setItem('keeva_chat_sessions', JSON.stringify(sessions));
+    } else {
+      localStorage.removeItem('keeva_chat_sessions');
+    }
+  }, [sessions]);
+
+  // Auto scroll
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Pisahkan logika pengiriman pesan agar bisa dipanggil dari input & klik rekomendasi
+  // === FUNGSI MANAJEMEN CHAT ===
+  const handleNewChat = () => {
+    // Cek kalau sesi saat ini masih kosong, jangan buat sesi baru lagi
+    if (currentSession?.messages.length === 0) return;
+
+    const newSessionId = Date.now().toString();
+    const newSession: ChatSession = {
+      id: newSessionId,
+      title: 'Percakapan Baru',
+      messages: [],
+      updatedAt: Date.now(),
+    };
+    setSessions(prev => [newSession, ...prev]);
+    setCurrentSessionId(newSessionId);
+  };
+
+  const handleDeleteClick = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setSessionToDelete(id);
+  };
+
+  const confirmDelete = () => {
+    if (sessionToDelete) {
+      const updatedSessions = sessions.filter(s => s.id !== sessionToDelete);
+      
+      // Jika semua chat dihapus, buatkan percakapan kosong baru
+      if (updatedSessions.length === 0) {
+        const newSessionId = Date.now().toString();
+        updatedSessions.push({
+          id: newSessionId,
+          title: 'Percakapan Baru',
+          messages: [],
+          updatedAt: Date.now(),
+        });
+      }
+
+      setSessions(updatedSessions);
+      if (currentSessionId === sessionToDelete) {
+        setCurrentSessionId(updatedSessions[0].id);
+      }
+      setSessionToDelete(null); 
+    }
+  };
+
+  // === FUNGSI COPY CHAT ===
+  const handleCopy = (id: string, content: string) => {
+    navigator.clipboard.writeText(content);
+    setCopiedId(id);
+    setTimeout(() => {
+      setCopiedId(null);
+    }, 2000);
+  };
+
   const processMessage = async (text: string) => {
     if (!text.trim()) return;
+
+    let activeSessionId = currentSessionId;
+    if (!activeSessionId) {
+      activeSessionId = Date.now().toString();
+      const newSession: ChatSession = {
+        id: activeSessionId,
+        title: text.substring(0, 25) + '...',
+        messages: [],
+        updatedAt: Date.now(),
+      };
+      setSessions(prev => [newSession, ...prev]);
+      setCurrentSessionId(activeSessionId);
+    }
 
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
@@ -40,12 +192,39 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
       content: text,
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    const sessionHistory = sessions
+      .find(s => s.id === activeSessionId)?.messages
+      .slice(-10)
+      .map(msg => ({
+        role: msg.role === 'bot' ? 'assistant' : 'user',
+        content: msg.content
+      })) || [];
+
+    setSessions(prev => prev.map(s => {
+      if (s.id === activeSessionId) {
+        return { 
+          ...s, 
+          messages: [...s.messages, userMsg], 
+          updatedAt: Date.now(),
+          title: s.title === 'Percakapan Baru' ? text.substring(0, 25) + '...' : s.title 
+        };
+      }
+      return s;
+    }).sort((a, b) => b.updatedAt - a.updatedAt));
+
     setInput('');
     setIsLoading(true);
+    
+    if (textareaRef.current) {
+      textareaRef.current.style.height = '48px'; 
+    }
 
     try {
-      const reply = await sendChatMessage({ message: userMsg.content, churn_data: tableData });
+      const reply = await sendChatMessage({ 
+        message: userMsg.content, 
+        churn_data: tableData,
+        history: sessionHistory 
+      });
       
       const botMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -53,7 +232,12 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
         content: reply,
       };
       
-      setMessages((prev) => [...prev, botMsg]);
+      setSessions(prev => prev.map(s => {
+        if (s.id === activeSessionId) {
+          return { ...s, messages: [...s.messages, botMsg], updatedAt: Date.now() };
+        }
+        return s;
+      }));
     } catch (error) {
       console.error(error);
     } finally {
@@ -61,83 +245,228 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
     }
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSendMessage = async (e?: React.FormEvent | React.KeyboardEvent) => {
+    if (e) e.preventDefault();
     await processMessage(input);
   };
 
   return (
-    <div className="w-full bg-white border border-gray-200 rounded-2xl shadow-sm flex flex-col overflow-hidden h-[500px]">
-      {/* Messages Area */}
-      <div className="flex-1 p-6 overflow-y-auto bg-gray-50 flex flex-col gap-4">
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
-            <div className="space-y-3 opacity-60 flex flex-col items-center">
-              <svg className="w-12 h-12 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-              </svg>
-              <p className="text-sm text-gray-500 max-w-sm">
-                The KEEVA system is ready to help. Select a question below or type your own.
-              </p>
-            </div>
+    <>
+      <div ref={containerRef} className="w-full bg-white border border-gray-200 rounded-2xl shadow-sm flex overflow-hidden h-[600px] relative">
+        
+        {/* SIDEBAR - HISTORY CHAT */}
+        <div 
+          className="bg-gray-50 flex flex-col flex-shrink-0"
+          style={{ width: sidebarWidth }}
+        >
+          <div className="p-4 border-b border-gray-200">
+            <button 
+              onClick={handleNewChat}
+              className="w-full bg-white border border-gray-300 hover:border-blue-500 hover:text-blue-600 text-gray-700 font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors text-sm shadow-sm"
+            >
+              <Plus size={16} /> New Chat
+            </button>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+            {sessions.map((session) => (
+              <div 
+                key={session.id}
+                onClick={() => setCurrentSessionId(session.id)}
+                className={`group cursor-pointer flex items-center justify-between p-3 rounded-lg text-sm transition-colors ${
+                  currentSessionId === session.id 
+                    ? 'bg-blue-100 text-blue-700 font-medium' 
+                    : 'hover:bg-gray-200 text-gray-600'
+                }`}
+              >
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <MessageSquare size={14} className="flex-shrink-0" />
+                  <span className="truncate">{session.title}</span>
+                </div>
+                {/* Sembunyikan tombol hapus untuk "Percakapan Baru" yang masih kosong */}
+                {session.messages.length > 0 && (
+                  <button 
+                    onClick={(e) => handleDeleteClick(e, session.id)}
+                    className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Hapus percakapan"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
 
-            {/* Tombol Rekomendasi Pertanyaan */}
-            <div className="flex flex-wrap justify-center gap-2 max-w-lg mt-4">
-              {RECOMMENDED_QUESTIONS.map((question, index) => (
-                <button
-                  key={index}
-                  onClick={() => processMessage(question)}
-                  disabled={isLoading}
-                  className="text-xs sm:text-sm bg-white border border-blue-200 text-blue-600 px-4 py-2 rounded-full hover:bg-blue-50 hover:border-blue-300 transition-all text-left shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        {/* DRAGGABLE RESIZER */}
+        <div
+          onMouseDown={startResizing}
+          className="w-1.5 bg-gray-200 hover:bg-blue-400 cursor-col-resize transition-colors flex-shrink-0 z-10"
+          title="Geser untuk menyesuaikan ukuran"
+        />
+
+        {/* CHAT AREA */}
+        <div className="flex-1 flex flex-col bg-white h-full relative min-w-0">
+          <div className="flex-1 p-6 overflow-y-auto flex flex-col gap-4 bg-white/50">
+            
+            {messages.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
+                <div className="space-y-3 opacity-60 flex flex-col items-center">
+                  <svg className="w-12 h-12 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
+                  <p className="text-sm text-gray-500 max-w-sm">
+                    KEEVA system is ready. Select a recommended question or type your own to start a new analysis.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap justify-center gap-2 max-w-lg mt-4">
+                  {RECOMMENDED_QUESTIONS.map((question, index) => (
+                    <button
+                      key={index}
+                      onClick={() => processMessage(question)}
+                      disabled={isLoading}
+                      className="text-xs sm:text-sm bg-white border border-blue-200 text-blue-600 px-4 py-2 rounded-full hover:bg-blue-50 transition-all text-left shadow-sm disabled:opacity-50"
+                    >
+                      {question}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={`flex flex-col gap-1 w-full max-w-[85%] ${
+                  msg.role === 'user' ? 'self-end items-end' : 'self-start items-start'
+                }`}
+              >
+                {/* Chat Bubble */}
+                <div
+                  className={`p-4 rounded-xl text-sm leading-relaxed break-words whitespace-pre-wrap w-fit ${
+                    msg.role === 'user'
+                      ? 'bg-blue-600 text-white rounded-br-none shadow-sm'
+                      : 'bg-gray-50 border border-gray-200 text-gray-800 rounded-bl-none shadow-sm'
+                  }`}
                 >
-                  {question}
+                  {msg.role === 'user' ? (
+                    msg.content
+                  ) : (
+                    <div className="prose prose-sm max-w-none break-words">
+                      <ReactMarkdown
+                        components={{
+                          p: ({node, ...props}) => <p className="mb-2 last:mb-0 break-words" {...props} />,
+                          ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-2 space-y-1" {...props} />,
+                          ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-2 space-y-1" {...props} />,
+                          li: ({node, ...props}) => <li className="pl-1 break-words" {...props} />,
+                          strong: ({node, ...props}) => <strong className="font-semibold text-gray-900" {...props} />,
+                        }}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
+                    </div>
+                  )}
+                </div>
+
+                {/* Copy Button */}
+                <button
+                  onClick={() => handleCopy(msg.id, msg.content)}
+                  className="flex items-center gap-1.5 text-[11px] text-gray-400 hover:text-gray-600 transition-colors px-1 mt-0.5"
+                  title="Copy text"
+                >
+                  {copiedId === msg.id ? (
+                    <>
+                      <Check size={12} className="text-green-500" /> 
+                      <span className="text-green-500 font-medium">Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={12} /> 
+                      <span>Copy</span>
+                    </>
+                  )}
                 </button>
-              ))}
-            </div>
+              </div>
+            ))}
+            
+            {isLoading && (
+              <div className="text-sm text-gray-500 self-start bg-gray-50 border border-gray-100 p-4 rounded-xl rounded-bl-none shadow-sm flex gap-1 items-center mb-4">
+                <span className="animate-bounce">●</span>
+                <span className="animate-bounce" style={{ animationDelay: '0.2s' }}>●</span>
+                <span className="animate-bounce" style={{ animationDelay: '0.4s' }}>●</span>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
-        )}
-        
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`max-w-[75%] p-4 rounded-xl text-sm leading-relaxed ${
-              msg.role === 'user'
-                ? 'bg-blue-600 text-white self-end rounded-br-none shadow-sm'
-                : 'bg-white border border-gray-200 text-gray-800 self-start rounded-bl-none shadow-sm'
-            }`}
-          >
-            {msg.content}
-          </div>
-        ))}
-        
-        {isLoading && (
-          <div className="text-sm text-gray-500 self-start bg-white border border-gray-100 p-4 rounded-xl rounded-bl-none flex gap-1 items-center shadow-sm">
-            <span className="animate-bounce">●</span>
-            <span className="animate-bounce" style={{ animationDelay: '0.2s' }}>●</span>
-            <span className="animate-bounce" style={{ animationDelay: '0.4s' }}>●</span>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
+
+          {/* INPUT AREA */}
+          <form onSubmit={handleSendMessage} className="p-4 bg-white border-t border-gray-100 flex items-end gap-3 z-10">
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => {
+                setInput(e.target.value);
+                e.target.style.height = '48px';
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (input.trim() && !isLoading) {
+                    handleSendMessage(e);
+                  }
+                }
+              }}
+              placeholder="Type your message..."
+              rows={1}
+              className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white transition-colors text-sm resize-none overflow-y-auto custom-scrollbar"
+              style={{ minHeight: '48px', maxHeight: '120px' }}
+              disabled={isLoading}
+            />
+            <button
+              type="submit"
+              disabled={isLoading || !input.trim()}
+              className="bg-blue-600 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors shrink-0 h-[48px]"
+            >
+              Kirim
+            </button>
+          </form>
+        </div>
       </div>
 
-      {/* Input Area */}
-      <form onSubmit={handleSendMessage} className="p-4 bg-white border-t border-gray-100 flex gap-3">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type a message or select a recommended question..."
-          className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white transition-all text-sm"
-          disabled={isLoading}
-        />
-        <button
-          type="submit"
-          disabled={isLoading || !input.trim()}
-          className="bg-blue-600 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          Kirim
-        </button>
-      </form>
-    </div>
+      {/* MODAL KONFIRMASI HAPUS */}
+      {sessionToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 transform transition-all animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle size={20} className="text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">Hapus Percakapan</h3>
+            </div>
+            
+            <p className="text-sm text-gray-500 mb-6 pl-13">
+              Apakah Anda yakin ingin menghapus riwayat obrolan ini? Tindakan ini tidak dapat dibatalkan.
+            </p>
+            
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setSessionToDelete(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors shadow-sm"
+              >
+                Ya, Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

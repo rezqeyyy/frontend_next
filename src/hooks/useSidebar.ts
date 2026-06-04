@@ -17,7 +17,9 @@ export function useSidebar() {
   // Load collapse state from Local Storage
   useEffect(() => {
     try {
-      if (localStorage.getItem(COLLAPSE_KEY) === "1") setIsCollapsed(true);
+      if (typeof window !== "undefined") {
+        if (localStorage.getItem(COLLAPSE_KEY) === "1") setIsCollapsed(true);
+      }
     } catch (error) {
       console.error("Failed to read from localStorage:", error);
     }
@@ -26,7 +28,9 @@ export function useSidebar() {
   // Save collapse state to Local Storage
   useEffect(() => {
     try {
-      localStorage.setItem(COLLAPSE_KEY, isCollapsed ? "1" : "0");
+      if (typeof window !== "undefined") {
+        localStorage.setItem(COLLAPSE_KEY, isCollapsed ? "1" : "0");
+      }
     } catch (error) {
       console.error("Failed to write to localStorage:", error);
     }
@@ -35,13 +39,18 @@ export function useSidebar() {
   // Fetch current user authentication metadata
   useEffect(() => {
     async function fetchUser() {
-      const user = (await getCurrentUser()) as any;
-      if (user) {
-        const name = user.user_metadata?.full_name || user.email?.split("@")[0] || "User";
-        const photo = user.user_metadata?.avatar_url || null;
-        setUserName(name);
-        if (photo) setUserPhoto(photo);
-      } else {
+      try {
+        const user = (await getCurrentUser()) as any;
+        if (user) {
+          const name = user.user_metadata?.full_name || user.email?.split("@")[0] || "User";
+          const photo = user.user_metadata?.avatar_url || null;
+          setUserName(name);
+          if (photo) setUserPhoto(photo);
+        } else {
+          setUserName("Guest");
+        }
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
         setUserName("Guest");
       }
     }

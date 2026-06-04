@@ -48,7 +48,7 @@ export default function PredictionResultsPage() {
               placeholder="Search customer ID..." 
               value={searchTerm}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm w-full sm:w-[250px] focus:outline-none focus:border-blue-500"
+              className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-base sm:text-sm w-full sm:w-[250px] focus:outline-none focus:border-blue-500"
             />
           </div>
           
@@ -58,7 +58,7 @@ export default function PredictionResultsPage() {
             <select
               value={selectedRank}
               onChange={(e) => handleRankFilterChange(e.target.value)}
-              className="pl-9 pr-8 py-2 border border-gray-200 rounded-lg text-sm bg-white text-gray-600 focus:outline-none focus:border-blue-500 cursor-pointer w-full sm:w-auto appearance-none"
+              className="pl-9 pr-8 py-2 border border-gray-200 rounded-lg text-base sm:text-sm bg-white text-gray-600 focus:outline-none focus:border-blue-500 cursor-pointer w-full sm:w-auto appearance-none"
             >
               <option value="all">All Ranks</option>
               <option value="High">High Risk</option>
@@ -103,7 +103,7 @@ export default function PredictionResultsPage() {
           <select 
             value={itemsPerPage} 
             onChange={(e) => handleItemsPerPageChange(e.target.value)} 
-            className="border border-gray-200 rounded-md px-2 py-1 focus:outline-none bg-white"
+            className="border border-gray-200 rounded-md px-2 py-1 focus:outline-none bg-white text-base sm:text-sm cursor-pointer"
           >
             <option value={10}>10</option>
             <option value={20}>20</option>
@@ -120,7 +120,7 @@ export default function PredictionResultsPage() {
 
       {/* TABLE ELEMENT VIEW */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden w-full">
-        <div className="overflow-x-auto p-4 md:p-5">
+        <div className="overflow-x-auto p-4 md:p-5 custom-scrollbar">
           <table className="w-full text-left text-sm min-w-[1200px]">
             <thead className="text-gray-500 border-b border-gray-100 bg-gray-50/30">
               <tr>

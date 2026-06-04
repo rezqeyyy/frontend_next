@@ -1,4 +1,4 @@
-// C:\KULIAH\semester 6\KEEVA\frontend_next\src\components\layout\Sidebar.tsx
+// \src\components\layout\Sidebar.tsx
 
 "use client";
 
@@ -49,14 +49,14 @@ export default function Sidebar() {
   return (
     <>
       {/* --- MOBILE TOP NAVIGATION --- */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-100 px-5 flex items-center justify-between z-[40]">
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white/90 backdrop-blur-md border-b border-gray-100 px-5 flex items-center justify-between z-[40] shadow-sm">
         <div className="flex items-center gap-2">
           <img src="/assets/keeva.png" alt="Logo" className="h-7 w-auto" />
-          <span className="font-bold text-gray-900 text-lg tracking-tight">Keeva</span>
+          <span className="font-bold text-slate-900 text-lg tracking-tight">Keeva</span>
         </div>
         <button
           onClick={() => setIsMobileOpen(true)}
-          className="p-2 text-gray-500 hover:bg-gray-50 rounded-xl"
+          className="p-2 text-slate-500 hover:bg-slate-100/50 rounded-xl transition-colors"
         >
           <Menu size={24} />
         </button>
@@ -64,7 +64,7 @@ export default function Sidebar() {
 
       {/* --- SIDEBAR DRAWER OVERLAY (Mobile) --- */}
       <div
-        className={`fixed inset-0 bg-black/20 backdrop-blur-sm z-[50] transition-opacity lg:hidden ${
+        className={`fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[50] transition-all duration-300 lg:hidden ${
           isMobileOpen ? "opacity-100 visible" : "opacity-0 invisible"
         }`}
         onClick={() => setIsMobileOpen(false)}
@@ -73,29 +73,29 @@ export default function Sidebar() {
       {/* --- MAIN SIDEBAR --- */}
       <aside
         className={`
-          fixed inset-y-0 left-0 z-[60] flex flex-col bg-white border-r border-slate-100 transition-all duration-300 ease-in-out
+          fixed inset-y-0 left-0 z-[60] flex flex-col bg-white/95 backdrop-blur-xl border-r border-slate-100/80 transition-all duration-300 ease-in-out
           lg:translate-x-0 lg:static lg:h-screen lg:z-20 lg:shadow-none shadow-2xl
           ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
           ${isCollapsed ? "lg:w-[88px] w-[260px]" : "w-[260px]"}
         `}
       >
-        {/* DESKTOP TOGGLE: Menggunakan Desain 3 Strip ke Bawah */}
+        {/* DESKTOP TOGGLE */}
         <button
           onClick={() => setIsCollapsed((v) => !v)}
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           className={`
-            hidden lg:flex absolute top-8 z-30 w-8 h-8 items-center justify-center transition-all group
+            hidden lg:flex absolute top-7 z-30 w-8 h-8 items-center justify-center transition-all duration-300 group
             ${isCollapsed 
-              ? "-right-4 rounded-full bg-white border-2 border-slate-100 shadow-sm text-slate-400 hover:text-blue-600 hover:border-blue-100 hover:bg-blue-50" 
-              : "right-5 bg-transparent text-slate-300 hover:text-blue-600"
+              ? "-right-4 rounded-full bg-white border border-slate-200 shadow-sm text-slate-400 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50/50" 
+              : "right-4 bg-transparent text-slate-300 hover:text-blue-600"
             }
           `}
         >
-          {/* GRIP HANDLE: 3 Strip Vertikal ke Bawah */}
+          {/* GRIP HANDLE */}
           <div className="flex flex-col gap-[3px] items-center justify-center">
-            <span className="w-3 h-[2px] bg-current rounded-full transition-all group-hover:scale-x-110" />
-            <span className="w-3 h-[2px] bg-current rounded-full transition-all group-hover:scale-x-110" />
-            <span className="w-3 h-[2px] bg-current rounded-full transition-all group-hover:scale-x-110" />
+            <span className="w-3 h-[2px] bg-current rounded-full transition-transform duration-200 group-hover:scale-x-125" />
+            <span className="w-3 h-[2px] bg-current rounded-full transition-transform duration-200 group-hover:scale-x-125" />
+            <span className="w-3 h-[2px] bg-current rounded-full transition-transform duration-200 group-hover:scale-x-125" />
           </div>
         </button>
 
@@ -105,10 +105,10 @@ export default function Sidebar() {
             <img
               src="/assets/keeva.png"
               alt="Keeva Logo"
-              className="h-8 w-auto object-contain shrink-0"
+              className="h-8 w-auto object-contain shrink-0 drop-shadow-sm"
             />
             <span
-              className={`text-2xl font-extrabold text-slate-900 tracking-tight whitespace-nowrap overflow-hidden transition-all duration-200 ${
+              className={`text-2xl font-extrabold text-slate-900 tracking-tight whitespace-nowrap overflow-hidden transition-all duration-300 ${
                 isCollapsed ? "lg:w-0 lg:opacity-0" : "w-auto opacity-100"
               }`}
             >
@@ -117,14 +117,14 @@ export default function Sidebar() {
           </div>
           <button
             onClick={() => setIsMobileOpen(false)}
-            className="lg:hidden ml-auto p-2 text-gray-400 hover:bg-gray-50 rounded-lg"
+            className="lg:hidden ml-auto p-2 text-slate-400 hover:bg-slate-100/50 rounded-lg transition-colors"
           >
             <X size={20} />
           </button>
         </div>
 
         {/* NAVIGATION LINKS */}
-        <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto overflow-x-hidden">
+        <nav className="flex-1 px-4 py-4 space-y-1.5 overflow-y-auto overflow-x-hidden custom-scrollbar">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -134,21 +134,23 @@ export default function Sidebar() {
                 key={item.name}
                 href={item.href}
                 title={isCollapsed ? item.name : undefined}
-                className={`relative flex items-center rounded-xl transition-all duration-200 ${
-                  isCollapsed ? "lg:justify-center px-4 py-3.5 lg:px-0" : "px-4 py-3.5 gap-4"
+                className={`relative flex items-center rounded-xl transition-all duration-200 group ${
+                  isCollapsed ? "lg:justify-center px-4 py-3 lg:px-0" : "px-4 py-3 gap-3.5"
                 } ${
                   isActive
-                    ? "bg-[#1d4ed8] text-white shadow-md shadow-blue-200/50"
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                    : "text-slate-500 hover:bg-slate-100/50 hover:text-slate-900"
                 }`}
               >
                 <Icon
                   size={20}
                   strokeWidth={isActive ? 2.5 : 2}
-                  className={`shrink-0 ${isActive ? "text-white" : "text-slate-400"}`}
+                  className={`shrink-0 transition-colors ${
+                    isActive ? "text-white" : "text-slate-400 group-hover:text-blue-500"
+                  }`}
                 />
                 <span
-                  className={`text-[15px] font-medium whitespace-nowrap overflow-hidden transition-all duration-200 ${
+                  className={`text-[14.5px] font-medium whitespace-nowrap overflow-hidden transition-all duration-300 ${
                     isCollapsed ? "lg:w-0 lg:opacity-0" : "w-auto opacity-100"
                   }`}
                 >
@@ -160,32 +162,35 @@ export default function Sidebar() {
         </nav>
 
         {/* USER PROFILE BOTTOM */}
-        <div className={`mt-auto border-t border-slate-100 flex items-center ${isCollapsed ? "lg:justify-center p-4" : "p-5 justify-between"}`}>
+        <div className={`mt-auto border-t border-slate-100/80 bg-slate-50/30 flex items-center transition-all ${isCollapsed ? "lg:justify-center p-4" : "p-5 justify-between"}`}>
           <div className={`flex items-center overflow-hidden ${isCollapsed ? "lg:w-auto" : "gap-3 max-w-[170px]"}`}>
-            <div className="w-10 h-10 rounded-full bg-[#f8f6ff] overflow-hidden shrink-0">
+            <div className="w-10 h-10 rounded-full bg-blue-50 border border-blue-100/50 overflow-hidden shrink-0 shadow-sm">
               <img
                 src={
                   userPhoto ||
-                  `https://api.dicebear.com/7.x/initials/svg?seed=${userName}&backgroundColor=b599f6`
+                  `https://api.dicebear.com/7.x/initials/svg?seed=${userName}&backgroundColor=3b82f6`
                 }
                 alt={userName}
                 className="w-full h-full object-cover"
               />
             </div>
             <div
-              className={`flex flex-col overflow-hidden transition-all duration-200 ${
+              className={`flex flex-col overflow-hidden transition-all duration-300 ${
                 isCollapsed ? "lg:w-0 lg:opacity-0" : "w-auto opacity-100"
               }`}
             >
-              <span className="text-[15px] font-bold text-slate-900 leading-tight truncate">
+              <span className="text-[14px] font-bold text-slate-800 leading-tight truncate">
                 {userName}
+              </span>
+              <span className="text-[12px] font-medium text-slate-500 truncate">
+                Admin
               </span>
             </div>
           </div>
           <button
             onClick={() => setIsSettingsOpen(true)}
             title="Settings"
-            className={`p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-all shrink-0 ${
+            className={`p-2 rounded-lg text-slate-400 hover:bg-white hover:text-blue-600 hover:shadow-sm transition-all shrink-0 ${
               isCollapsed ? "lg:hidden" : "block"
             }`}
           >

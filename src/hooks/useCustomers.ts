@@ -12,6 +12,9 @@ export function useCustomers() {
     const [itemsPerPage, setItemsPerPage] = useState<number | 'all'>(10);
     const [currentPage, setCurrentPage] = useState(1);
     const [searchTerm, setSearchTerm] = useState('');
+    
+    // 1. Tambahkan state untuk Churn Filter
+    const [churnFilter, setChurnFilterState] = useState('all');
 
     useEffect(() => {
         fetchCustomersData();
@@ -22,18 +25,18 @@ export function useCustomers() {
         setErrorMsg('');
 
         try {
-        const user = await getCurrentUser() as any;
-        if (!user || !user.id) {
-            throw new Error('Gagal verifikasi session. Silakan login ulang.');
-        }
+            const user = await getCurrentUser() as any;
+            if (!user || !user.id) {
+                throw new Error('Gagal verifikasi session. Silakan login ulang.');
+            }
 
-        // Memanggil fungsi baru di customerService milik lu
-        const data = await customerService.getCustomersByUserId(user.id);
-        setCustomers(data);
+            // Memanggil fungsi baru di customerService milik lu
+            const data = await customerService.getCustomersByUserId(user.id);
+            setCustomers(data);
         } catch (err: any) {
-        setErrorMsg(err.message || 'Terjadi kesalahan saat mengambil data.');
+            setErrorMsg(err.message || 'Terjadi kesalahan saat mengambil data.');
         } finally {
-        setLoading(false);
+            setLoading(false);
         }
     };
 
@@ -42,19 +45,34 @@ export function useCustomers() {
         if (!isConfirm) return;
 
         try {
-        // Memanggil fungsi hapus baru di customerService milik lu
-        await customerService.deleteCustomer(customerId);
-        setCustomers((prev) => prev.filter((cust) => cust.customer_id !== customerId));
+            // Memanggil fungsi hapus baru di customerService milik lu
+            await customerService.deleteCustomer(customerId);
+            setCustomers((prev) => prev.filter((cust) => cust.customer_id !== customerId));
         } catch (error: any) {
-        alert(`Gagal menghapus data: ${error.message}`);
+            alert(`Gagal menghapus data: ${error.message}`);
         }
     };
 
+    // 2. Update filteredCustomers untuk menangani Search DAN Churn Filter
     const filteredCustomers = useMemo(() => {
-        return customers.filter(cust => 
-        cust.customer_id?.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [customers, searchTerm]);
+        let result = customers;
+
+        // Filter dari Search
+        if (searchTerm) {
+            result = result.filter(cust => 
+                cust.customer_id?.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+
+        // Filter dari Status Churn (Asumsi: 0 = Active, 1 = Churned)
+        if (churnFilter === 'active') {
+            result = result.filter(cust => cust.churn_actual === 0);
+        } else if (churnFilter === 'churned') {
+            result = result.filter(cust => cust.churn_actual === 1);
+        }
+
+        return result;
+    }, [customers, searchTerm, churnFilter]);
 
     const itemsLimit = itemsPerPage === 'all' ? filteredCustomers.length : itemsPerPage;
     const totalPages = Math.ceil(filteredCustomers.length / (itemsLimit || 1));
@@ -75,6 +93,12 @@ export function useCustomers() {
         setCurrentPage(1);
     };
 
+    // 3. Tambahkan handler untuk mengubah filter churn dan mereset halaman
+    const setChurnFilter = (val: string) => {
+        setChurnFilterState(val);
+        setCurrentPage(1);
+    };
+
     return {
         loading,
         errorMsg,
@@ -87,6 +111,9 @@ export function useCustomers() {
         filteredCustomers,
         totalPages,
         displayedData,
-        handleDelete
+        handleDelete,
+        // 4. Export state dan setter churnFilter
+        churnFilter,
+        setChurnFilter
     };
 }

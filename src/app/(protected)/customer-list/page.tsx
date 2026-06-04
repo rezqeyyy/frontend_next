@@ -18,7 +18,9 @@ export default function CustomerListPage() {
     filteredCustomers,
     totalPages,
     displayedData,
-    handleDelete
+    handleDelete,
+    churnFilter,
+    setChurnFilter
   } = useCustomers();
 
   if (errorMsg) return <div className="p-4 sm:p-8 text-red-500 font-medium">Error: {errorMsg}</div>;
@@ -34,6 +36,7 @@ export default function CustomerListPage() {
         </div>
         
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+          {/* SEARCH INPUT */}
           <div className="relative w-full sm:w-auto">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input 
@@ -41,12 +44,25 @@ export default function CustomerListPage() {
               placeholder="Search customer ID..." 
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
-              className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm w-full sm:w-[250px] focus:outline-none focus:border-blue-500"
+              className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-base sm:text-sm w-full sm:w-[250px] focus:outline-none focus:border-blue-500"
             />
           </div>
-          <button className="bg-white border border-gray-200 px-4 py-2 rounded-lg text-sm text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50 transition">
-            <Filter size={16} /> <span>Filter</span>
-          </button>
+          
+          {/* DROPDOWN FILTER CHURN */}
+          <div className="relative w-full sm:w-auto">
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+              <Filter size={16} className="text-gray-400" />
+            </div>
+            <select
+              value={churnFilter}
+              onChange={(e) => setChurnFilter(e.target.value)}
+              className="pl-9 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-base sm:text-sm text-gray-600 appearance-none focus:outline-none focus:border-blue-500 hover:bg-gray-50 transition cursor-pointer w-full"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="churned">Churned</option>
+            </select>
+          </div>
         </div>
       </header>
 
@@ -57,7 +73,7 @@ export default function CustomerListPage() {
           <select 
             value={itemsPerPage} 
             onChange={(e) => handleItemsPerPage(e.target.value)} 
-            className="border border-gray-200 rounded-md px-2 py-1 focus:outline-none bg-white"
+            className="border border-gray-200 rounded-md px-2 py-1 focus:outline-none bg-white text-base sm:text-sm cursor-pointer"
           >
             <option value={10}>10</option>
             <option value={20}>20</option>
@@ -98,7 +114,9 @@ export default function CustomerListPage() {
               ) : displayedData.length > 0 ? (
                 displayedData.map((cust, idx) => (
                   <tr key={cust.id || `${cust.customer_id}-${idx}`} className="border-b border-gray-50 hover:bg-gray-50/50">
-                    <td className="py-4 px-2">{(currentPage - 1) * (itemsPerPage === 'all' ? filteredCustomers.length : itemsPerPage) + idx + 1}</td>
+                    <td className="py-4 px-2">
+                      {(currentPage - 1) * (itemsPerPage === 'all' ? filteredCustomers.length : Number(itemsPerPage)) + idx + 1}
+                    </td>
                     <td className="py-4 font-semibold text-gray-800">{cust.customer_id ?? '-'}</td>
                     <td className="py-4 text-center">{cust.total_users ?? 0}</td>
                     <td className="py-4 text-center text-gray-600">{cust.monthly_usage_hrs?.toFixed(1) ?? '0'}</td>
@@ -125,7 +143,7 @@ export default function CustomerListPage() {
                   </tr>
                 ))
               ) : (
-                <tr><td colSpan={11} className="py-8 text-center text-gray-400">Belum ada data pelanggan di akun ini. Silakan upload CSV.</td></tr>
+                <tr><td colSpan={11} className="py-8 text-center text-gray-400">Tidak ada data pelanggan yang cocok dengan filter.</td></tr>
               )}
             </tbody>
           </table>
@@ -135,13 +153,13 @@ export default function CustomerListPage() {
         {itemsPerPage !== 'all' && totalPages > 1 && (
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 md:px-5 py-4 border-t border-gray-50 bg-gray-50/50">
             <p className="text-xs md:text-sm text-gray-500 text-center sm:text-left">
-              Showing {(currentPage - 1) * Number(itemsPerPage) + 1} to {Math.min(currentPage * Number(itemsPerPage), filteredCustomers.length)} of {filteredCustomers.length} entries
+              Showing {filteredCustomers.length === 0 ? 0 : (currentPage - 1) * Number(itemsPerPage) + 1} to {Math.min(currentPage * Number(itemsPerPage), filteredCustomers.length)} of {filteredCustomers.length} entries
             </p>
             <div className="flex items-center gap-2">
               <button 
                 onClick={() => handlePageChange('prev')} 
                 disabled={currentPage === 1} 
-                className="p-1.5 rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition"
+                className="p-1.5 rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition cursor-pointer"
               >
                 <ChevronLeft size={16} />
               </button>
@@ -150,8 +168,8 @@ export default function CustomerListPage() {
               </span>
               <button 
                 onClick={() => handlePageChange('next')} 
-                disabled={currentPage === totalPages} 
-                className="p-1.5 rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition"
+                disabled={currentPage === totalPages || totalPages === 0} 
+                className="p-1.5 rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition cursor-pointer"
               >
                 <ChevronRight size={16} />
               </button>
