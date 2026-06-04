@@ -70,7 +70,7 @@ export default function ChatWidget() {
           <div className="flex-1 p-4 overflow-y-auto bg-gray-50 flex flex-col gap-3">
             {messages.length === 0 && (
               <p className="text-center text-sm text-gray-400 mt-10">
-                Halo! Ada yang bisa saya bantu hari ini?
+                Hello! How can I help you today?
               </p>
             )}
             {messages.map((msg) => (
@@ -86,7 +86,7 @@ export default function ChatWidget() {
               </div>
             ))}
             {isLoading && (
-              <div className="text-sm text-gray-500 self-start">AI sedang mengetik...</div>
+              <div className="text-sm text-gray-500 self-start">AI is typing...</div>
             )}
             <div ref={messagesEndRef} />
           </div>
@@ -97,7 +97,7 @@ export default function ChatWidget() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ketik pesan..."
+              placeholder="Type a message..."
               className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 text-sm"
               disabled={isLoading}
             />
@@ -106,7 +106,7 @@ export default function ChatWidget() {
               disabled={isLoading || !input.trim()}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
             >
-              Kirim
+              Send
             </button>
           </form>
         </div>

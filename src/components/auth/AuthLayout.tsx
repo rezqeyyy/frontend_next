@@ -18,8 +18,12 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
             {children}
           </div>
 
-          {/* Back To Website Button - Disesuaikan posisinya di layar kecil */}
-          <Link href="/" className="mt-8 lg:mt-0 static lg:absolute lg:bottom-10 lg:left-10 flex items-center justify-center lg:justify-start gap-1 text-[#b599f6] text-sm font-medium hover:opacity-80 transition-opacity font-mono">
+          {/* Back To Website Button */}
+          <Link 
+            href="/" 
+            className="mt-16 lg:mt-0 static lg:absolute lg:bottom-6 lg:left-10 flex items-center justify-center lg:justify-start gap-3 text-[#b599f6] text-sm font-medium hover:opacity-80 transition-opacity font-mono"
+          >
+            {/* gap-3 untuk menjauhkan jarak ikon panah dengan teks tulisan */}
             <ChevronLeft size={16} /> Back To Website
           </Link>
           

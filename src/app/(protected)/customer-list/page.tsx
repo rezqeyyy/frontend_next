@@ -125,7 +125,7 @@ export default function CustomerListPage() {
                   </tr>
                 ))
               ) : (
-                <tr><td colSpan={11} className="py-8 text-center text-gray-400">Belum ada data pelanggan di akun ini. Silakan upload CSV.</td></tr>
+                <tr><td colSpan={11} className="py-8 text-center text-gray-400">There is no customer data in this account yet. Please upload a CSV file.</td></tr>
               )}
             </tbody>
           </table>

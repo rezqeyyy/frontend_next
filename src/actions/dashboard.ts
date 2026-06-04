@@ -209,22 +209,22 @@ const { data: latestDataset } = await supabase
       alerts.push({
         type: "danger",
         title: "High Churn Risk",
-        desc: `${totalHighRiskAlert} pelanggan berisiko kabur.`,
-        time: "Baru saja",
+        desc: `${totalHighRiskAlert} Customers are at risk of churn.`,
+        time: "Just now",
       });
     if (inactiveCount > 0)
       alerts.push({
         type: "warning",
         title: "Activity Drop",
-        desc: `${inactiveCount} pelanggan belum login > 14 hari.`,
-        time: "Hari ini",
+        desc: `${inactiveCount} The customer has not logged in for more than 14 days.`,
+        time: "Today",
       });
     if (lowUsageCount > 0)
       alerts.push({
         type: "info",
         title: "Low Usage",
-        desc: `${lowUsageCount} pelanggan jarang pakai fitur.`,
-        time: "Hari ini",
+        desc: `${lowUsageCount} Customers rarely use the feature.`,
+        time: "Today",
       });
 
     return {

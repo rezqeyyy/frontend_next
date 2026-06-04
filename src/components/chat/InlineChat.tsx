@@ -135,7 +135,7 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
           disabled={isLoading || !input.trim()}
           className="bg-blue-600 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          Kirim
+          Send
         </button>
       </form>
     </div>

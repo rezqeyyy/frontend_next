@@ -22,21 +22,24 @@ export default function CustomerDetailModal({ isOpen, onClose, customer }: Custo
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm transition-opacity">
+      
       {/* Modal Container */}
-      <div className="bg-white w-full max-w-[500px] max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+      <div className="relative bg-white w-full max-w-[500px] max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
         
-        {/* Tombol Close Silang */}
+        {/* Tombol Close Silang - Diberi jarak aman dari scrollbar (right-6) */}
         <button 
           onClick={onClose} 
-          className="absolute top-4 right-4 p-1.5 bg-white/50 hover:bg-white text-gray-600 rounded-full backdrop-blur-md transition z-10"
+          className="absolute top-5 right-6 p-1.5 bg-white hover:bg-gray-100 text-gray-600 rounded-full transition z-50 shadow-md border border-gray-100"
         >
-          <X size={20} />
+          <X size={16} />
         </button>
 
         <div className="overflow-y-auto custom-scrollbar">
-          {/* HEADER GRADIENT (Sesuai desain lu) */}
+          {/* HEADER GRADIENT */}
           <div className="bg-gradient-to-br from-[#f3eefe] to-[#e4f0ff] p-6 pb-8 relative">
-            <div className="flex justify-between items-start mb-6">
+            
+            {/* Ditambah pr-14 khusus di baris ini agar teks persentase berjarak aman dan tidak nempel ke tombol close */}
+            <div className="flex justify-between items-start mb-6 pr-14"> 
               <h2 className="text-2xl font-bold text-gray-900">{customer.customer_id}</h2>
               <div className="text-right">
                 <span className="text-2xl font-bold text-gray-900 leading-none">{customer.churn_risk_score}%</span>
