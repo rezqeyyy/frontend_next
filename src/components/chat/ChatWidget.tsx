@@ -100,7 +100,7 @@ export default function ChatWidget() {
           <div className="flex-1 p-4 overflow-y-auto bg-gray-50 flex flex-col gap-3">
             {messages.length === 0 && (
               <p className="text-center text-sm text-gray-400 mt-10">
-                Halo! Ada yang bisa saya bantu hari ini?
+                Hello! How can I help you today?
               </p>
             )}
             {messages.map((msg) => (
@@ -154,7 +154,7 @@ export default function ChatWidget() {
               disabled={isLoading || !input.trim()}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
-              Kirim
+              Send
             </button>
           </form>
         </div>

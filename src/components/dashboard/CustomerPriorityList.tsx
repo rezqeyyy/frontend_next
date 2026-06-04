@@ -97,7 +97,7 @@ export default function CustomerPriorityList() {
             </thead>
             <tbody className="text-gray-700">
               {loading ? (
-                <tr><td colSpan={8} className="py-8 text-center text-gray-400">Menganalisis pelanggan prioritas...</td></tr>
+                <tr><td colSpan={8} className="py-8 text-center text-gray-400">Analyzing priority customers...</td></tr>
               ) : customers.length > 0 ? (
                 customers.map((cust, idx) => {
                   const segment = getSegmentStyle(cust.rank_level);
@@ -134,7 +134,7 @@ export default function CustomerPriorityList() {
                   );
                 })
               ) : (
-                <tr><td colSpan={8} className="py-8 text-center text-gray-400">Belum ada data pelanggan yang dianalisis.</td></tr>
+                <tr><td colSpan={8} className="py-8 text-center text-gray-400">No customer data has been analyzed yet.</td></tr>
               )}
             </tbody>
           </table>

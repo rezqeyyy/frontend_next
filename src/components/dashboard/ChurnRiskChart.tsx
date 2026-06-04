@@ -6,7 +6,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 export default function ChurnRiskChart({ data }: { data: any[] }) {
   if (!data || data.length === 0) {
-    return <div className="flex h-full items-center justify-center text-gray-400 text-sm">Menunggu data trend...</div>;
+    return <div className="flex h-full items-center justify-center text-gray-400 text-sm">Waiting for trend data...</div>;
   }
 
   // --- WARNA UNGU KHAS DESAIN LU (#8b5cf6) ---

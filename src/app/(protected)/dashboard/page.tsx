@@ -60,7 +60,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mb-5 min-h-[140px]">
         {loadingStats ? (
           <div className="col-span-full flex items-center justify-center bg-white p-6 rounded-2xl border border-gray-100 shadow-sm gap-2 text-gray-400">
-             <Loader2 size={18} className="animate-spin" /> Menghitung statistik...
+             <Loader2 size={18} className="animate-spin" /> Calculating statistics...
           </div>
         ) : (
           <>
@@ -87,24 +87,26 @@ export default function DashboardPage() {
         {/* RIGHT COLUMN */}
         <div className="w-full lg:w-[320px] lg:flex-shrink-0 flex flex-col gap-5">
           <div className="w-full bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col max-h-[420px]">
-            <SectionHeader title="Alerts" linkText="View all" />
+            <div className="[&_svg]:hidden [&_i]:hidden">
+              <SectionHeader title="Alerts"/>
+            </div>
             <div className="flex flex-col gap-3 overflow-y-auto pr-1 custom-scrollbar">
               {loadingStats ? (
                 <div className="flex items-center justify-center p-6 text-gray-400 text-sm">
-                  <Loader2 size={16} className="animate-spin mr-2" /> Mengecek sistem...
+                  <Loader2 size={16} className="animate-spin mr-2" /> Checking the system...
                 </div>
               ) : stats?.alerts?.length > 0 ? (
                 stats.alerts.map((alert: any, idx: number) => (
                   <AlertItem key={idx} type={alert.type} title={alert.title} desc={alert.desc} time={alert.time} />
                 ))
               ) : (
-                <div className="text-sm text-gray-500 text-center py-4">Belum ada peringatan aktivitas.</div>
+                <div className="text-sm text-gray-500 text-center py-4">There are currently no activity alerts.</div>
               )}
             </div>
           </div>
           
-          <InsightCard title="AI Insight" icon={HelpCircle} desc="70% dari pelanggan beresiko tinggi mengalami penurunan aktivitas dalam 2 minggu terakhir." href="/prediction-results" />
-          <InsightCard title="Top Recommendation" icon={AlertTriangle} desc="Prioritaskan outreach ke 312 pelanggan beresiko tinggi dengan onboarding ulang." href="/customer-list" />
+          <InsightCard title="AI Insight" icon={HelpCircle} desc="70% of high-risk customers have seen a decline in activity over the past two weeks." href="/prediction-results" />
+          <InsightCard title="Top Recommendation" icon={AlertTriangle} desc="Prioritize outreach to 312 high-risk customers through re-onboarding." href="/customer-list" />
         </div>
       </div>
 

@@ -123,12 +123,6 @@ export default function LoginPage() {
           </span>
         </div>
       </form>
-
-      <div className="mt-8 max-w-[380px]">
-        <Link href="/" className="text-[13px] text-[#bc9cf4] hover:text-[#94b1fc] transition-colors flex items-center font-medium">
-          &lt; Back To Website
-        </Link>
-      </div>
     </AuthLayout>
   );
 }
