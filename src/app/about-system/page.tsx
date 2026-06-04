@@ -1,6 +1,6 @@
 "use client";
 import Navbar from "@/components/landing/Navbar";
-
+import Link from "next/link";
 import {
   Brain,
   Database,
@@ -18,7 +18,6 @@ import {
   Zap,
   Activity,
   Star,
-  Link,
 } from "lucide-react";
 
 const steps = [
