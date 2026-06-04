@@ -7,7 +7,7 @@ const team = [
   {
     name: "Achmad Haikal Maali",
     role: "Lead Developer",
-    photo: "/assets/haikal.jpg",
+    photo: "/assets/haikal.jpeg",
   },
   {
     name: "Aren Syifa Nabilah",
