@@ -62,17 +62,17 @@ export default function UploadCsvPage() {
       {showConfirmModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[999] p-4">
           <div className="bg-white rounded-[32px] p-8 max-w-sm w-full shadow-2xl relative">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">Pilih Metode Upload</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-6">Choose Upload Method</h3>
             <div className="space-y-3">
               <button onClick={() => startUpload('merge')} className="w-full flex items-center gap-4 p-4 rounded-2xl border hover:bg-indigo-50 transition-all text-left">
                 <ListPlus className="text-indigo-600" />
-                <div><div className="font-bold text-sm">Tambah (Merge)</div><div className="text-xs text-gray-400">Gabung data, anti-duplikat.</div></div>
+                <div><div className="font-bold text-sm">Merge Data</div><div className="text-xs text-gray-400">Combine with existing data. Skip duplicates.</div></div>
               </button>
               <button onClick={() => startUpload('replace')} className="w-full flex items-center gap-4 p-4 rounded-2xl border hover:bg-red-50 transition-all text-left">
                 <Database className="text-red-600" />
-                <div><div className="font-bold text-sm">Ganti (Replace)</div><div className="text-xs text-gray-400">Hapus data lama, ganti baru.</div></div>
+                <div><div className="font-bold text-sm">Replace Data</div><div className="text-xs text-gray-400">Delete old data and replace with new.</div></div>
               </button>
-              <button onClick={() => setShowConfirmModal(false)} className="w-full py-3 text-gray-400 text-sm">Batal</button>
+              <button onClick={() => setShowConfirmModal(false)} className="w-full py-3 text-gray-400 text-sm">Cancel</button>
             </div>
           </div>
         </div>
