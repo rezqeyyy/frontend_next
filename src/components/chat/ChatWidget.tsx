@@ -32,7 +32,7 @@ export default function ChatWidget() {
   }, [messages]);
 
   const handleClearHistory = () => {
-    if (window.confirm("Hapus obrolan ini?")) {
+    if (window.confirm("Delete this chat?")) {
       setMessages([]);
     }
   };

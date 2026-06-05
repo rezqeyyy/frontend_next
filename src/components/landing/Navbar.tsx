@@ -20,10 +20,10 @@ export default function Navbar() {
             {/* DESKTOP NAV */}
             <div className="hidden lg:flex items-center gap-8 text-sm font-semibold text-gray-600">
                 <Link href="/#home" className="hover:text-purple-400 transition">Home</Link>
-                <Link href="/#features" className="hover:text-purple-400 transition">Feature</Link>
-                <Link href="/#workflow" className="hover:text-purple-400 transition">Workflow</Link>
-                <Link href="/#ai-system" className="hover:text-purple-400 transition">AI System</Link>
-                <Link href="/#profile" className="hover:text-purple-400 transition">Profile</Link>
+                <Link href="/features" className="hover:text-purple-400 transition">Feature</Link>
+                <Link href="/workflow" className="hover:text-purple-400 transition">Workflow</Link>
+                <Link href="/ai-system" className="hover:text-purple-400 transition">AI System</Link>
+                <Link href="/team" className="hover:text-purple-400 transition">Profile</Link>
                 <Link href="about-system" className="hover:text-purple-400 transition">About the system</Link>
             </div>
 
@@ -53,11 +53,11 @@ export default function Navbar() {
         <div className={`lg:hidden transition-all duration-300 ease-in-out bg-white ${isOpen ? 'max-h-screen opacity-100 border-t border-gray-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
             <div className="px-6 pt-4 pb-10 space-y-1">
             <MobileLink href="#" label="Home" onClick={() => setIsOpen(false)} />
-            <MobileLink href="#features" label="Feature" onClick={() => setIsOpen(false)} />
+            <MobileLink href="features" label="Feature" onClick={() => setIsOpen(false)} />
             <MobileLink href="#about" label="About" onClick={() => setIsOpen(false)} />
             <MobileLink href="#integrations" label="Integrations" onClick={() => setIsOpen(false)} />
-            <MobileLink href="/profile" label="Profile" onClick={() => setIsOpen(false)} />
-            <MobileLink href="/about-system" label="About System" onClick={() => setIsOpen(false)} />
+            <MobileLink href="/team" label="Profile" onClick={() => setIsOpen(false)} />
+            <MobileLink href="about-system" label="About System" onClick={() => setIsOpen(false)} />
             
             <div className="pt-6 flex flex-col gap-3">
                 <Link 

@@ -39,8 +39,8 @@ export default function Hero() {
             />
             <StatCard
               icon={<Users className="text-blue-500" size={22} />}
-              label="10K+"
-              sub="Active Users"
+              label="40+"
+              sub="Customer Variables"
             />
             <StatCard
               icon={<Headset className="text-blue-500" size={22} />}
