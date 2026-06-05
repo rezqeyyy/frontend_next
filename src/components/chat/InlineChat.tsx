@@ -93,7 +93,7 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
     const newSessionId = Date.now().toString();
     const newSession: ChatSession = {
       id: newSessionId,
-      title: 'Percakapan Baru',
+      title: 'New Chat',
       messages: [],
       updatedAt: Date.now(),
     };
@@ -125,7 +125,7 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
     const newSessionId = Date.now().toString();
     const newSession: ChatSession = {
       id: newSessionId,
-      title: 'Percakapan Baru',
+      title: 'New Chat',
       messages: [],
       updatedAt: Date.now(),
     };
@@ -147,7 +147,7 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
         const newSessionId = Date.now().toString();
         updatedSessions.push({
           id: newSessionId,
-          title: 'Percakapan Baru',
+          title: 'New Chat',
           messages: [],
           updatedAt: Date.now(),
         });
@@ -206,7 +206,7 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
           ...s, 
           messages: [...s.messages, userMsg], 
           updatedAt: Date.now(),
-          title: s.title === 'Percakapan Baru' ? text.substring(0, 25) + '...' : s.title 
+          title: s.title === 'New Chat' ? text.substring(0, 25) + '...' : s.title 
         };
       }
       return s;
@@ -288,7 +288,7 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
                   <button 
                     onClick={(e) => handleDeleteClick(e, session.id)}
                     className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Hapus percakapan"
+                    title="Delete Chat"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -443,11 +443,11 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
               <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
                 <AlertTriangle size={20} className="text-red-600" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900">Hapus Percakapan</h3>
+              <h3 className="text-lg font-bold text-gray-900">Delete Chat</h3>
             </div>
             
             <p className="text-sm text-gray-500 mb-6 pl-13">
-              Apakah Anda yakin ingin menghapus riwayat obrolan ini? Tindakan ini tidak dapat dibatalkan.
+              Are you sure you want to delete this chat? This action cannot be undone.
             </p>
             
             <div className="flex justify-end gap-3">
@@ -455,13 +455,13 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
                 onClick={() => setSessionToDelete(null)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
               >
-                Batal
+                Cancel
               </button>
               <button
                 onClick={confirmDelete}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors shadow-sm"
               >
-                Ya, Hapus
+                Yes, Delete 
               </button>
             </div>
           </div>

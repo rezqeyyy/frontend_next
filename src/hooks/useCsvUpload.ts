@@ -32,7 +32,7 @@ export function useCsvUpload() {
             .delete()
             .eq('dataset_id', currentDatasetId);
           
-          if (deleteError) throw new Error(`Gagal hapus data lama: ${deleteError.message}`);
+          if (deleteError) throw new Error(`Failed to delete old data: ${deleteError.message}`);
           
           // Beri jeda kecil
           await new Promise(resolve => setTimeout(resolve, 200));
@@ -128,7 +128,7 @@ export function useCsvUpload() {
       if (uploadError) throw new Error(uploadError.message);
       
       setStatus('success');
-      setMessage(mode === 'replace' ? "Data lama dibuang, data baru masuk!" : "Data digabung tanpa duplikat!");
+      setMessage(mode === 'replace' ? "Old data deleted, new data uploaded!" : "Data merged without duplicates!");
     } catch (err: any) {
       console.error("Upload error:", err);
       setStatus('error');
