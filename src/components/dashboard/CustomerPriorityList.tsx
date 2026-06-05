@@ -40,7 +40,7 @@ export default function CustomerPriorityList() {
         .select('*')
         .in('dataset_id', datasetIds)
         .order('churn_risk_score', { ascending: false })
-        .limit(5);
+        .limit(3);
 
       if (!error && data) {
         setCustomers(data);
