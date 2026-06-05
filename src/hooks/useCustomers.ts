@@ -40,24 +40,20 @@ export function useCustomers() {
         }
     };
 
+    // FIX: Menghapus window.confirm DAN alert bawaan browser
     const handleDelete = async (customerId: string) => {
-        const isConfirm = window.confirm(`Yakin ingin menghapus data pelanggan ${customerId}?`);
-        if (!isConfirm) return;
-
         try {
             // Memanggil fungsi hapus baru di customerService milik lu
             await customerService.deleteCustomer(customerId);
             setCustomers((prev) => prev.filter((cust) => cust.customer_id !== customerId));
         } catch (error: any) {
-            alert(`Gagal menghapus data: ${error.message}`);
+            // Mengganti alert error dengan menyimpan ke state errorMsg agar tampil rapi di UI
+            setErrorMsg(`Gagal menghapus data: ${error.message}`);
         }
     };
 
-    // Fungsi baru untuk Hapus Semua Data
+    // FIX: Menghapus window.confirm DAN alert bawaan browser
     const handleDeleteAll = async () => {
-        const isConfirm = window.confirm('PERINGATAN: Yakin ingin menghapus SEMUA data pelanggan? Tindakan ini tidak dapat dibatalkan.');
-        if (!isConfirm) return;
-
         setLoading(true);
         try {
             const user = await getCurrentUser() as any;
@@ -69,9 +65,10 @@ export function useCustomers() {
             
             setCustomers([]);
             setCurrentPage(1); 
-            alert('Semua data berhasil dihapus dari database.');
+            // ❌ alert() sukses di sini sudah dihapus total agar tidak muncul pop-up lagi
         } catch (error: any) {
-            alert(`Gagal menghapus semua data: ${error.message}`);
+            // Mengganti alert error dengan menyimpan ke state errorMsg
+            setErrorMsg(`Gagal menghapus semua data: ${error.message}`);
         } finally {
             setLoading(false);
         }
@@ -136,7 +133,7 @@ export function useCustomers() {
         totalPages,
         displayedData,
         handleDelete,
-        handleDeleteAll, // Export fungsi hapus semua
+        handleDeleteAll,
         churnFilter,
         setChurnFilter
     };

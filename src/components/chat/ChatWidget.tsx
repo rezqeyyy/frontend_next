@@ -145,7 +145,7 @@ export default function ChatWidget() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ketik pesan..."
+              placeholder="Type a message..."
               className="flex-1 px-3 py-2 border border-gray-200 bg-gray-50 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white text-sm transition-colors"
               disabled={isLoading}
             />
