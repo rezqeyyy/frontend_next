@@ -1,7 +1,7 @@
 // src/hooks/useCustomers.ts
 
 import { useState, useEffect, useMemo } from 'react';
-import { customerService } from '@/services/customerService'; // Diarahkan ke file lu
+import { customerService } from '@/services/customerService'; 
 import { getCurrentUser } from '@/actions/auth';
 
 export function useCustomers() {
@@ -50,6 +50,30 @@ export function useCustomers() {
             setCustomers((prev) => prev.filter((cust) => cust.customer_id !== customerId));
         } catch (error: any) {
             alert(`Gagal menghapus data: ${error.message}`);
+        }
+    };
+
+    // Fungsi baru untuk Hapus Semua Data
+    const handleDeleteAll = async () => {
+        const isConfirm = window.confirm('PERINGATAN: Yakin ingin menghapus SEMUA data pelanggan? Tindakan ini tidak dapat dibatalkan.');
+        if (!isConfirm) return;
+
+        setLoading(true);
+        try {
+            const user = await getCurrentUser() as any;
+            if (!user || !user.id) {
+                throw new Error('Gagal verifikasi session. Silakan login ulang.');
+            }
+
+            await customerService.deleteAllCustomers(user.id);
+            
+            setCustomers([]);
+            setCurrentPage(1); 
+            alert('Semua data berhasil dihapus dari database.');
+        } catch (error: any) {
+            alert(`Gagal menghapus semua data: ${error.message}`);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -112,7 +136,7 @@ export function useCustomers() {
         totalPages,
         displayedData,
         handleDelete,
-        // 4. Export state dan setter churnFilter
+        handleDeleteAll, // Export fungsi hapus semua
         churnFilter,
         setChurnFilter
     };

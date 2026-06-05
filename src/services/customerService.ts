@@ -41,13 +41,41 @@ export const customerService = {
   },
 
   /**
-   * Menghapus data customer (Tambahan untuk delete)
+   * Menghapus 1 data customer (Tambahan untuk delete)
    */
   async deleteCustomer(customerId: string) {
     const { error } = await supabase
       .from('customers')
       .delete()
       .eq('customer_id', customerId);
+
+    if (error) throw new Error(error.message);
+    return true;
+  },
+
+  /**
+   * Menghapus SEMUA data customer berdasarkan user_id (Tambahan baru untuk delete all)
+   */
+  async deleteAllCustomers(userId: string) {
+    // 1. Cari dulu dataset milik user ini
+    const { data: userDatasets, error: dsError } = await supabase
+      .from('datasets')
+      .select('id')
+      .eq('user_id', userId);
+
+    if (dsError) throw new Error(dsError.message);
+
+    const datasetIds = userDatasets?.map(d => d.id) || [];
+    
+    if (datasetIds.length === 0) {
+      throw new Error('Tidak ada data yang ditemukan untuk dihapus.');
+    }
+
+    // 2. Hapus semua customer yang ada di dalam dataset tersebut
+    const { error } = await supabase
+      .from('customers')
+      .delete()
+      .in('dataset_id', datasetIds);
 
     if (error) throw new Error(error.message);
     return true;

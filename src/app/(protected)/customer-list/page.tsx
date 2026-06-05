@@ -1,3 +1,5 @@
+// src/app/(protected)/customer-list/page.tsx
+
 'use client';
 
 import { Search, Filter, Trash2, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -19,6 +21,7 @@ export default function CustomerListPage() {
     totalPages,
     displayedData,
     handleDelete,
+    handleDeleteAll, // Panggil dari hooks
     churnFilter,
     setChurnFilter
   } = useCustomers();
@@ -66,7 +69,7 @@ export default function CustomerListPage() {
         </div>
       </header>
 
-      {/* KONTROL PAGINATION ATAS */}
+      {/* KONTROL PAGINATION ATAS & TOMBOL DELETE ALL */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <span>Show</span>
@@ -83,8 +86,21 @@ export default function CustomerListPage() {
           </select>
           <span>entries</span>
         </div>
-        <div className="text-sm text-gray-500 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-          Total: <span className="font-semibold text-gray-800">{filteredCustomers.length}</span>
+        
+        {/* TOTAL DATA & TOMBOL HAPUS SEMUA */}
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          <div className="text-sm text-gray-500 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
+            Total: <span className="font-semibold text-gray-800">{filteredCustomers.length}</span>
+          </div>
+          
+          <button 
+            onClick={handleDeleteAll}
+            disabled={loading || filteredCustomers.length === 0}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-red-600 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 hover:text-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Trash2 size={16} />
+            Hapus Semua Data
+          </button>
         </div>
       </div>
 
