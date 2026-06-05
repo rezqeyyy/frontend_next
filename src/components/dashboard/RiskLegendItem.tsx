@@ -1,41 +1,33 @@
 // src/components/dashboard/RiskLegendItem.tsx
 import { RiskData } from '@/types';
 
-interface RiskLegendItemProps {
-  data: RiskData;
-}
-
-export const RiskLegendItem = ({ data }: RiskLegendItemProps) => {
+export const RiskLegendItem = ({ data }: { data: RiskData }) => {
   return (
-    <div className="flex items-center justify-between group p-1.5 sm:p-2 mb-1 last:mb-0 rounded-xl hover:bg-gray-50/80 border border-transparent hover:border-gray-100 transition-all duration-200 w-full overflow-hidden">
+    <div className="flex items-center w-full py-2 group">
       
-      {/* Kiri: Dot & Label (Bisa nyusut kalau layar sempit) */}
-      <div className="flex items-center gap-2 min-w-0">
+      <div className="flex items-center gap-3 min-w-0 flex-1">
         <div 
-          className="w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm" 
+          className="w-3 h-3 rounded-full flex-shrink-0 shadow-sm" 
           style={{ backgroundColor: data.color }} 
         />
-        <span className="text-xs sm:text-[13px] font-medium text-gray-500 group-hover:text-gray-700 transition-colors truncate">
+        <span className="text-[13px] font-medium text-gray-600 whitespace-nowrap">
           {data.label}
         </span>
       </div>
 
-      {/* Kanan: Angka & Persentase (Ukurannya fix, ga akan kepotong) */}
-      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 ml-2">
-        <span className="text-[13px] sm:text-[14px] font-bold text-gray-900 tracking-tight text-right w-6 sm:w-8">
+      <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+        <span className="text-[14px] font-bold text-gray-900 text-right w-10">
           {data.value.toLocaleString('id-ID')}
         </span>
+        
         <div 
-          className="flex items-center justify-center px-1.5 py-0.5 rounded-md border shadow-sm min-w-[42px] sm:min-w-[48px]"
+          className="flex items-center justify-center py-1 rounded-md border shadow-sm w-[52px] flex-shrink-0"
           style={{ 
-            backgroundColor: `${data.color}10`,
+            backgroundColor: `${data.color}15`,
             borderColor: `${data.color}30`, 
           }}
         >
-          <span 
-            className="text-[10px] sm:text-[11px] font-bold"
-            style={{ color: data.color }}
-          >
+          <span className="text-[11px] font-bold" style={{ color: data.color }}>
             {data.percentage}%
           </span>
         </div>

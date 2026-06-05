@@ -4,21 +4,17 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { RiskData } from '@/types';
 
-interface RiskDonutChartProps {
-  data: RiskData[];
-}
-
-export const RiskDonutChart = ({ data }: RiskDonutChartProps) => {
+export const RiskDonutChart = ({ data }: { data: RiskData[] }) => {
   return (
-    <div className="w-[160px] h-[160px] relative">
+    <div className="w-full h-full relative drop-shadow-sm">
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
             data={data}
-            nameKey="label" // <-- INI OBATNYA BIAR GAK MUNCUL "0"
+            nameKey="label"
             dataKey="value"
-            innerRadius={45}
-            outerRadius={75}
+            innerRadius="60%"
+            outerRadius="90%"
             paddingAngle={4}
             cornerRadius={6}
             stroke="none"
@@ -29,20 +25,20 @@ export const RiskDonutChart = ({ data }: RiskDonutChartProps) => {
               <Cell 
                 key={`cell-${entry.id}`} 
                 fill={entry.color} 
-                className="hover:opacity-80 transition-opacity duration-300 outline-none" 
+                className="hover:opacity-80 transition-opacity duration-300 outline-none cursor-pointer"
               />
             ))}
           </Pie>
-          {/* Tooltip dibikin lebih bersih */}
           <Tooltip 
             cursor={false}
             formatter={(value: any) => [`${value} Customers`, 'Total']}
             contentStyle={{ 
-              borderRadius: '12px', 
-              border: 'none', 
-              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' 
+              borderRadius: '10px', 
+              border: '1px solid #f3f4f6', 
+              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+              backgroundColor: '#ffffff'
             }}
-            itemStyle={{ fontWeight: 600 }}
+            itemStyle={{ fontWeight: 600, color: '#111827' }}
           />
         </PieChart>
       </ResponsiveContainer>
