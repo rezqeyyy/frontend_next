@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ChatMessage } from '@/types/chat';
 import { sendChatMessage } from '@/services/chatService';
 import ReactMarkdown from 'react-markdown';
-import { Trash2, Plus, MessageSquare, AlertTriangle, Copy, Check } from 'lucide-react';
+import { Trash2, Plus, MessageSquare, AlertTriangle, Copy, Check, Menu, X } from 'lucide-react';
 
 interface InlineChatProps {
   tableData?: any[];
@@ -25,23 +25,20 @@ const RECOMMENDED_QUESTIONS = [
 ];
 
 export default function InlineChat({ tableData = [] }: InlineChatProps) {
-  // === STATE MULTI-SESSION ===
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   
-  // === STATE MODAL & COPY ===
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile sidebar state
   
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  // === REFS ===
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // === FITUR RESIZE SIDEBAR ===
   const [sidebarWidth, setSidebarWidth] = useState(250); 
   const isResizing = useRef(false);
 
@@ -75,21 +72,17 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
     };
   }, [resize, stopResizing]);
 
-  // === DATA SESI AKTIF ===
   const currentSession = sessions.find(s => s.id === currentSessionId);
   const messages = currentSession?.messages || [];
 
-  // === LOCAL STORAGE & INITIAL LOAD ===
   useEffect(() => {
     const savedSessions = localStorage.getItem('keeva_chat_sessions');
     let parsedSessions: ChatSession[] = [];
     
     if (savedSessions) {
-      // Ambil history lama, tapi HAPUS sesi yang belum ada pesannya (biar sidebar bersih)
       parsedSessions = JSON.parse(savedSessions).filter((s: ChatSession) => s.messages.length > 0);
     }
 
-    // Selalu buat otomatis 1 sesi baru setiap kali halaman direfresh / baru login
     const newSessionId = Date.now().toString();
     const newSession: ChatSession = {
       id: newSessionId,
@@ -98,12 +91,10 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
       updatedAt: Date.now(),
     };
 
-    // Pasang sesi kosong tersebut di urutan paling atas
     setSessions([newSession, ...parsedSessions]);
     setCurrentSessionId(newSessionId);
   }, []);
 
-  // Simpan update chat ke LocalStorage setiap ada perubahan
   useEffect(() => {
     if (sessions.length > 0) {
       localStorage.setItem('keeva_chat_sessions', JSON.stringify(sessions));
@@ -112,15 +103,15 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
     }
   }, [sessions]);
 
-  // Auto scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // === FUNGSI MANAJEMEN CHAT ===
   const handleNewChat = () => {
-    // Cek kalau sesi saat ini masih kosong, jangan buat sesi baru lagi
-    if (currentSession?.messages.length === 0) return;
+    if (currentSession?.messages.length === 0) {
+      setIsSidebarOpen(false);
+      return;
+    }
 
     const newSessionId = Date.now().toString();
     const newSession: ChatSession = {
@@ -131,6 +122,7 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
     };
     setSessions(prev => [newSession, ...prev]);
     setCurrentSessionId(newSessionId);
+    setIsSidebarOpen(false); // Close mobile sidebar after creating
   };
 
   const handleDeleteClick = (e: React.MouseEvent, id: string) => {
@@ -142,7 +134,6 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
     if (sessionToDelete) {
       const updatedSessions = sessions.filter(s => s.id !== sessionToDelete);
       
-      // Jika semua chat dihapus, buatkan percakapan kosong baru
       if (updatedSessions.length === 0) {
         const newSessionId = Date.now().toString();
         updatedSessions.push({
@@ -161,7 +152,6 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
     }
   };
 
-  // === FUNGSI COPY CHAT ===
   const handleCopy = (id: string, content: string) => {
     navigator.clipboard.writeText(content);
     setCopiedId(id);
@@ -252,19 +242,33 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
 
   return (
     <>
-      <div ref={containerRef} className="w-full bg-white border border-gray-200 rounded-2xl shadow-sm flex overflow-hidden h-[600px] relative">
+      <div ref={containerRef} className="w-full bg-white border border-gray-200 rounded-2xl shadow-sm flex overflow-hidden h-[80vh] md:h-[600px] min-h-[500px] relative">
         
+        {/* Overlay for mobile sidebar */}
+        {isSidebarOpen && (
+          <div 
+            className="absolute inset-0 bg-black/30 z-20 md:hidden transition-opacity"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
         {/* SIDEBAR - HISTORY CHAT */}
         <div 
-          className="bg-gray-50 flex flex-col flex-shrink-0"
-          style={{ width: sidebarWidth }}
+          className={`absolute md:relative z-30 h-full bg-gray-50 flex flex-col flex-shrink-0 border-r border-gray-200 transition-transform duration-300 w-64 md:w-auto ${
+            isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+          }`}
+          style={{ width: typeof window !== 'undefined' && window.innerWidth >= 768 ? sidebarWidth : undefined }}
         >
-          <div className="p-4 border-b border-gray-200">
+          <div className="p-4 border-b border-gray-200 flex justify-between items-center gap-2">
             <button 
               onClick={handleNewChat}
-              className="w-full bg-white border border-gray-300 hover:border-blue-500 hover:text-blue-600 text-gray-700 font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors text-sm shadow-sm"
+              className="flex-1 bg-white border border-gray-300 hover:border-blue-500 hover:text-blue-600 text-gray-700 font-medium py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors text-sm shadow-sm"
             >
-              <Plus size={16} /> New Chat
+              <Plus size={16} /> <span className="truncate">New Chat</span>
+            </button>
+            {/* Close sidebar button for mobile */}
+            <button onClick={() => setIsSidebarOpen(false)} className="md:hidden p-2 text-gray-500 hover:bg-gray-200 rounded-lg">
+              <X size={20} />
             </button>
           </div>
           
@@ -272,7 +276,10 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
             {sessions.map((session) => (
               <div 
                 key={session.id}
-                onClick={() => setCurrentSessionId(session.id)}
+                onClick={() => {
+                  setCurrentSessionId(session.id);
+                  setIsSidebarOpen(false); // Close on select on mobile
+                }}
                 className={`group cursor-pointer flex items-center justify-between p-3 rounded-lg text-sm transition-colors ${
                   currentSessionId === session.id 
                     ? 'bg-blue-100 text-blue-700 font-medium' 
@@ -283,11 +290,10 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
                   <MessageSquare size={14} className="flex-shrink-0" />
                   <span className="truncate">{session.title}</span>
                 </div>
-                {/* Sembunyikan tombol hapus untuk "Percakapan Baru" yang masih kosong */}
                 {session.messages.length > 0 && (
                   <button 
                     onClick={(e) => handleDeleteClick(e, session.id)}
-                    className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0"
                     title="Delete Chat"
                   >
                     <Trash2 size={14} />
@@ -298,35 +304,48 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
           </div>
         </div>
 
-        {/* DRAGGABLE RESIZER */}
+        {/* DRAGGABLE RESIZER (HIDDEN ON MOBILE) */}
         <div
           onMouseDown={startResizing}
-          className="w-1.5 bg-gray-200 hover:bg-blue-400 cursor-col-resize transition-colors flex-shrink-0 z-10"
+          className="hidden md:block w-1 bg-gray-200 hover:bg-blue-400 cursor-col-resize transition-colors flex-shrink-0 z-10"
           title="Geser untuk menyesuaikan ukuran"
         />
 
         {/* CHAT AREA */}
         <div className="flex-1 flex flex-col bg-white h-full relative min-w-0">
-          <div className="flex-1 p-6 overflow-y-auto flex flex-col gap-4 bg-white/50">
-            
+          
+          {/* Mobile Header Toolbar */}
+          <div className="md:hidden bg-white border-b border-gray-100 p-3 flex items-center gap-3 shrink-0 z-10 shadow-sm">
+            <button 
+              onClick={() => setIsSidebarOpen(true)} 
+              className="p-1.5 hover:bg-gray-100 rounded-md text-gray-600"
+            >
+              <Menu size={20} />
+            </button>
+            <span className="font-medium text-gray-800 text-sm truncate">
+              {currentSession?.title || 'Chat'}
+            </span>
+          </div>
+
+          <div className="flex-1 p-4 sm:p-6 overflow-y-auto flex flex-col gap-4 bg-white/50">
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
                 <div className="space-y-3 opacity-60 flex flex-col items-center">
-                  <svg className="w-12 h-12 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-10 h-10 sm:w-12 sm:h-12 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                   </svg>
-                  <p className="text-sm text-gray-500 max-w-sm">
+                  <p className="text-sm text-gray-500 max-w-xs sm:max-w-sm">
                     KEEVA system is ready. Select a recommended question or type your own to start a new analysis.
                   </p>
                 </div>
 
-                <div className="flex flex-wrap justify-center gap-2 max-w-lg mt-4">
+                <div className="flex flex-wrap justify-center gap-2 max-w-lg mt-4 px-2">
                   {RECOMMENDED_QUESTIONS.map((question, index) => (
                     <button
                       key={index}
                       onClick={() => processMessage(question)}
                       disabled={isLoading}
-                      className="text-xs sm:text-sm bg-white border border-blue-200 text-blue-600 px-4 py-2 rounded-full hover:bg-blue-50 transition-all text-left shadow-sm disabled:opacity-50"
+                      className="text-xs sm:text-sm bg-white border border-blue-200 text-blue-600 px-3 py-2 sm:px-4 sm:py-2 rounded-full hover:bg-blue-50 transition-all text-left shadow-sm disabled:opacity-50"
                     >
                       {question}
                     </button>
@@ -338,13 +357,13 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex flex-col gap-1 w-full max-w-[85%] ${
+                className={`flex flex-col gap-1 w-full max-w-[90%] sm:max-w-[85%] ${
                   msg.role === 'user' ? 'self-end items-end' : 'self-start items-start'
                 }`}
               >
                 {/* Chat Bubble */}
                 <div
-                  className={`p-4 rounded-xl text-sm leading-relaxed break-words whitespace-pre-wrap w-fit ${
+                  className={`p-3 sm:p-4 rounded-xl text-sm leading-relaxed break-words whitespace-pre-wrap w-fit ${
                     msg.role === 'user'
                       ? 'bg-blue-600 text-white rounded-br-none shadow-sm'
                       : 'bg-gray-50 border border-gray-200 text-gray-800 rounded-bl-none shadow-sm'
@@ -391,7 +410,7 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
             ))}
             
             {isLoading && (
-              <div className="text-sm text-gray-500 self-start bg-gray-50 border border-gray-100 p-4 rounded-xl rounded-bl-none shadow-sm flex gap-1 items-center mb-4">
+              <div className="text-sm text-gray-500 self-start bg-gray-50 border border-gray-100 p-3 sm:p-4 rounded-xl rounded-bl-none shadow-sm flex gap-1 items-center mb-4">
                 <span className="animate-bounce">●</span>
                 <span className="animate-bounce" style={{ animationDelay: '0.2s' }}>●</span>
                 <span className="animate-bounce" style={{ animationDelay: '0.4s' }}>●</span>
@@ -401,7 +420,7 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
           </div>
 
           {/* INPUT AREA */}
-          <form onSubmit={handleSendMessage} className="p-4 bg-white border-t border-gray-100 flex items-end gap-3 z-10">
+          <form onSubmit={handleSendMessage} className="p-3 sm:p-4 bg-white border-t border-gray-100 flex items-end gap-2 sm:gap-3 z-10">
             <textarea
               ref={textareaRef}
               value={input}
@@ -420,14 +439,14 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
               }}
               placeholder="Type your message..."
               rows={1}
-              className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white transition-colors text-sm resize-none overflow-y-auto custom-scrollbar"
+              className="flex-1 px-3 py-3 sm:px-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white transition-colors text-sm resize-none overflow-y-auto custom-scrollbar"
               style={{ minHeight: '48px', maxHeight: '120px' }}
               disabled={isLoading}
             />
             <button
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="bg-blue-600 text-white px-6 py-3 rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors shrink-0 h-[48px]"
+              className="bg-blue-600 text-white px-4 sm:px-6 py-3 rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors shrink-0 h-[48px]"
             >
               Kirim
             </button>
@@ -437,7 +456,7 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
 
       {/* MODAL KONFIRMASI HAPUS */}
       {sessionToDelete && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 transform transition-all animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
@@ -446,7 +465,7 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
               <h3 className="text-lg font-bold text-gray-900">Delete Chat</h3>
             </div>
             
-            <p className="text-sm text-gray-500 mb-6 pl-13">
+            <p className="text-sm text-gray-500 mb-6 sm:pl-13">
               Are you sure you want to delete this chat? This action cannot be undone.
             </p>
             

@@ -13,7 +13,6 @@ export default function ChatWidget() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load history di client-side
   useEffect(() => {
     const savedHistory = localStorage.getItem('keeva_widget_history');
     if (savedHistory) {
@@ -21,7 +20,6 @@ export default function ChatWidget() {
     }
   }, []);
 
-  // Simpan history ke LocalStorage & scroll kebawah saat render
   useEffect(() => {
     if (messages.length > 0) {
       localStorage.setItem('keeva_widget_history', JSON.stringify(messages));
@@ -47,7 +45,6 @@ export default function ChatWidget() {
       content: input,
     };
 
-    // Mapping history sebelumnya untuk AI Memory
     const chatHistory = messages.slice(-10).map((msg) => ({
       role: msg.role === 'bot' ? 'assistant' : 'user',
       content: msg.content
@@ -78,19 +75,19 @@ export default function ChatWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
       {isOpen && (
-        <div className="mb-4 w-80 h-96 bg-white border border-gray-200 rounded-xl shadow-2xl flex flex-col overflow-hidden">
+        <div className="mb-4 w-[calc(100vw-2rem)] sm:w-80 h-[70vh] sm:h-96 max-h-[600px] bg-white border border-gray-200 rounded-xl shadow-2xl flex flex-col overflow-hidden transition-all duration-200">
           {/* Header */}
-          <div className="bg-blue-600 text-white px-4 py-3 flex justify-between items-center">
+          <div className="bg-blue-600 text-white px-4 py-3 flex justify-between items-center shrink-0">
             <h3 className="font-semibold text-sm">KEEVA AI Assistant</h3>
             <div className="flex gap-4 items-center">
               {messages.length > 0 && (
-                <button onClick={handleClearHistory} className="text-white/80 hover:text-white" title="Bersihkan Chat">
+                <button onClick={handleClearHistory} className="text-white/80 hover:text-white transition-colors" title="Bersihkan Chat">
                   <Trash2 size={16} />
                 </button>
               )}
-              <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white font-bold" title="Tutup">
+              <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white font-bold p-1" title="Tutup">
                 ✕
               </button>
             </div>
@@ -106,7 +103,7 @@ export default function ChatWidget() {
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`max-w-[80%] p-3 rounded-xl text-sm ${
+                className={`max-w-[85%] sm:max-w-[80%] p-3 rounded-xl text-sm break-words ${
                   msg.role === 'user'
                     ? 'bg-blue-600 text-white self-end rounded-br-none'
                     : 'bg-white border border-gray-200 text-gray-800 self-start rounded-bl-none shadow-sm'
@@ -140,19 +137,19 @@ export default function ChatWidget() {
           </div>
 
           {/* Input Area */}
-          <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-gray-100 flex gap-2">
+          <form onSubmit={handleSendMessage} className="p-3 bg-white border-t border-gray-100 flex gap-2 shrink-0">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ketik pesan..."
-              className="flex-1 px-3 py-2 border border-gray-200 bg-gray-50 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white text-sm transition-colors"
+              className="flex-1 px-3 py-2 border border-gray-200 bg-gray-50 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white text-sm transition-colors min-w-0"
               disabled={isLoading}
             />
             <button
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors shrink-0"
             >
               Send
             </button>
@@ -164,7 +161,7 @@ export default function ChatWidget() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="w-14 h-14 bg-blue-600 rounded-full shadow-lg flex items-center justify-center text-white hover:bg-blue-700 transition-transform hover:scale-105"
+          className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-600 rounded-full shadow-lg flex items-center justify-center text-white hover:bg-blue-700 transition-transform hover:scale-105"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
