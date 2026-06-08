@@ -83,11 +83,11 @@ export default function ChatWidget() {
             <h3 className="font-semibold text-sm">KEEVA AI Assistant</h3>
             <div className="flex gap-4 items-center">
               {messages.length > 0 && (
-                <button onClick={handleClearHistory} className="text-white/80 hover:text-white transition-colors" title="Bersihkan Chat">
+                <button onClick={handleClearHistory} className="text-white/80 hover:text-white transition-colors" title="Clear Chat">
                   <Trash2 size={16} />
                 </button>
               )}
-              <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white font-bold p-1" title="Tutup">
+              <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white font-bold p-1" title="Close">
                 ✕
               </button>
             </div>
@@ -142,7 +142,7 @@ export default function ChatWidget() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ketik pesan..."
+              placeholder="Type your message..."
               className="flex-1 px-3 py-2 border border-gray-200 bg-gray-50 rounded-lg focus:outline-none focus:border-blue-500 focus:bg-white text-sm transition-colors min-w-0"
               disabled={isLoading}
             />

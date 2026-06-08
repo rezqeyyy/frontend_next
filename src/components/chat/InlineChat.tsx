@@ -30,10 +30,11 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
   
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile sidebar state
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isMounted, setIsMounted] = useState(false); // Fix Hydration Mismatch
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -41,6 +42,11 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
 
   const [sidebarWidth, setSidebarWidth] = useState(250); 
   const isResizing = useRef(false);
+
+  // Mencegah Hydration Mismatch
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const startResizing = useCallback(() => {
     isResizing.current = true;
@@ -122,7 +128,7 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
     };
     setSessions(prev => [newSession, ...prev]);
     setCurrentSessionId(newSessionId);
-    setIsSidebarOpen(false); // Close mobile sidebar after creating
+    setIsSidebarOpen(false); 
   };
 
   const handleDeleteClick = (e: React.MouseEvent, id: string) => {
@@ -257,7 +263,7 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
           className={`absolute md:relative z-30 h-full bg-gray-50 flex flex-col flex-shrink-0 border-r border-gray-200 transition-transform duration-300 w-64 md:w-auto ${
             isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
           }`}
-          style={{ width: typeof window !== 'undefined' && window.innerWidth >= 768 ? sidebarWidth : undefined }}
+          style={{ width: isMounted && window.innerWidth >= 768 ? sidebarWidth : undefined }}
         >
           <div className="p-4 border-b border-gray-200 flex justify-between items-center gap-2">
             <button 
@@ -266,7 +272,6 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
             >
               <Plus size={16} /> <span className="truncate">New Chat</span>
             </button>
-            {/* Close sidebar button for mobile */}
             <button onClick={() => setIsSidebarOpen(false)} className="md:hidden p-2 text-gray-500 hover:bg-gray-200 rounded-lg">
               <X size={20} />
             </button>
@@ -278,7 +283,7 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
                 key={session.id}
                 onClick={() => {
                   setCurrentSessionId(session.id);
-                  setIsSidebarOpen(false); // Close on select on mobile
+                  setIsSidebarOpen(false); 
                 }}
                 className={`group cursor-pointer flex items-center justify-between p-3 rounded-lg text-sm transition-colors ${
                   currentSessionId === session.id 
@@ -448,7 +453,7 @@ export default function InlineChat({ tableData = [] }: InlineChatProps) {
               disabled={isLoading || !input.trim()}
               className="bg-blue-600 text-white px-4 sm:px-6 py-3 rounded-xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors shrink-0 h-[48px]"
             >
-              Send
+              Kirim
             </button>
           </form>
         </div>
