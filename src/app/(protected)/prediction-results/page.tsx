@@ -1,9 +1,14 @@
 'use client';
 
+// Tambahkan useState dari react
+import { useState } from 'react';
 import { Search, Filter, ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import InlineChat from '@/components/chat/InlineChat'; 
 import { usePredictionResults } from '@/hooks/usePredictionResults';
 import { PredictionRow } from '@/components/prediction/PredictionRow';
+
+// IMPOR MODAL DETAIL CUSTOMER (Sesuaikan path file modal Anda jika berbeda)
+import CustomerDetailModal from '@/components/dashboard/CustomerDetailModal';
 
 export default function PredictionResultsPage() {
   const {
@@ -24,6 +29,16 @@ export default function PredictionResultsPage() {
     handleSearchChange,
     handleRankFilterChange
   } = usePredictionResults();
+
+  // STATE UNTUK MODAL DETAIL
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+
+  // Fungsi handler saat tombol View di baris tabel diklik
+  const handleViewClick = (customer: any) => {
+    setSelectedCustomer(customer);
+    setIsModalOpen(true);
+  };
 
   if (errorMessage) {
     return <div className="p-4 sm:p-8 text-red-500 font-medium">Error: {errorMessage}</div>;
@@ -65,7 +80,6 @@ export default function PredictionResultsPage() {
               <option value="Medium">Medium Risk</option>
               <option value="Low">Low Risk</option>
             </select>
-            {/* Custom mini-indicator chevron inside select natively */}
             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-[10px]">▼</div>
           </div>
         </div>
@@ -141,6 +155,7 @@ export default function PredictionResultsPage() {
                     key={cust.id || `${cust.customer_id}-${idx}`} 
                     no={(currentPage - 1) * (itemsPerPage === 'all' ? filteredCustomers.length : itemsPerPage) + idx + 1} 
                     data={cust} 
+                    onViewClick={handleViewClick} // PASSED PROPS HANDLER KE ROW
                   />
                 ))
               ) : (
@@ -185,6 +200,13 @@ export default function PredictionResultsPage() {
         <p className="text-sm text-gray-500 mb-6">Have questions about the analytical prediction metrics displayed above? Discuss insights immediately with KEEVA AI below.</p>
         <InlineChat tableData={displayedData} />
       </div>
+
+      {/* RENDER MODAL DI SINI */}
+      <CustomerDetailModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        customer={selectedCustomer} 
+      />
 
     </div>
   );

@@ -20,8 +20,8 @@ export function PredictionProgress({ isPredicting, predictProgress, predictError
             <Loader2 size={16} className="animate-spin text-blue-600" />
           )}
           {predictError 
-            ? "Gagal memprediksi sisa data. Cek koneksi backend atau console." 
-            : "Sedang memprediksi sisa data otomatis... (Bisa ditinggal pindah tab)"}
+            ? "Failed to predict the remaining data. Check your backend connection or console." 
+            : "Predicting the remaining data automatically... (You can switch tabs while this is happening)"}
         </span>
         <span>{predictProgress}%</span>
       </div>

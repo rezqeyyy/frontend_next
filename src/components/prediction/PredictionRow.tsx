@@ -4,9 +4,10 @@ import { CustomerData } from '@/services/predictionService';
 interface PredictionRowProps {
   no: number;
   data: CustomerData;
+  onViewClick: (customer: CustomerData) => void; // Tambahkan prop handler untuk memicu modal
 }
 
-export function PredictionRow({ no, data }: PredictionRowProps) {
+export function PredictionRow({ no, data, onViewClick }: PredictionRowProps) {
   const { 
     customer_id, 
     churn_risk_score: score, 
@@ -43,7 +44,16 @@ export function PredictionRow({ no, data }: PredictionRowProps) {
       <td className="py-4 text-center font-semibold text-gray-800">
         ${revenue?.toLocaleString() ?? '0'}
       </td>
-      <td className="py-4 text-center"></td>
+      
+      {/* BAGIAN ACTION BUTTON (Berdasarkan tombol View di dashboard) */}
+      <td className="py-4 text-center">
+        <button 
+          onClick={() => onViewClick(data)}
+          className="px-4 py-1.5 border border-blue-200 text-blue-600 rounded-lg text-xs font-semibold hover:bg-blue-50 transition"
+        >
+          View
+        </button>
+      </td>
     </tr>
   );
 }

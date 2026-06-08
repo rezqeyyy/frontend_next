@@ -2,7 +2,8 @@
 
 'use client';
 
-import { Search, Filter, Trash2, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
+import { Search, Filter, Trash2, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react'; // Mengapus import 'Edit' karena sudah tidak dipakai
 import { useRouter } from 'next/navigation';
 import { useCustomers } from '@/hooks/useCustomers';
 
@@ -21,15 +22,46 @@ export default function CustomerListPage() {
     totalPages,
     displayedData,
     handleDelete,
-    handleDeleteAll, // Panggil dari hooks
+    handleDeleteAll, 
     churnFilter,
     setChurnFilter
   } = useCustomers();
 
+  // State untuk mengontrol jenis modal ('delete_all' | 'single' | null)
+  const [modalType, setModalType] = useState<'delete_all' | 'single' | null>(null);
+  // State untuk menyimpan ID customer yang akan dihapus per baris
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+
   if (errorMsg) return <div className="p-4 sm:p-8 text-red-500 font-medium">Error: {errorMsg}</div>;
 
+  // Handler Hapus Semua Data
+  const openDeleteAllModal = () => {
+    setModalType('delete_all');
+  };
+
+  // Handler Hapus Item Tunggal
+  const openDeleteSingleModal = (customerId: string) => {
+    setSelectedCustomerId(customerId);
+    setModalType('single');
+  };
+
+  // Fungsi Konfirmasi Eksekusi Hapus
+  const handleConfirmAction = () => {
+    if (modalType === 'delete_all') {
+      handleDeleteAll();
+    } else if (modalType === 'single' && selectedCustomerId) {
+      handleDelete(selectedCustomerId);
+    }
+    closeModal();
+  };
+
+  const closeModal = () => {
+    setModalType(null);
+    setSelectedCustomerId(null);
+  };
+
   return (
-    <div className="p-4 pt-28 sm:p-6 sm:pt-24 lg:p-8 lg:pt-8 max-w-[1600px] mx-auto text-gray-800">
+    <div className="p-4 pt-28 sm:p-6 sm:pt-24 lg:p-8 lg:pt-8 max-w-[1600px] mx-auto text-gray-800 relative">
       
       {/* HEADER */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6 md:mb-8">
@@ -94,12 +126,12 @@ export default function CustomerListPage() {
           </div>
           
           <button 
-            onClick={handleDeleteAll}
+            onClick={openDeleteAllModal} 
             disabled={loading || filteredCustomers.length === 0}
             className="flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-red-600 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 hover:text-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Trash2 size={16} />
-            Hapus Semua Data
+            Delete All Data
           </button>
         </div>
       </div>
@@ -148,10 +180,8 @@ export default function CustomerListPage() {
                     </td>
                     <td className="py-4 text-center sticky right-0 bg-white group-hover:bg-gray-50/50 shadow-[-4px_0_6px_-1px_rgba(0,0,0,0.05)] z-10 transition-colors">
                       <div className="flex items-center justify-center gap-2">
-                        <button onClick={() => router.push('/upload-csv')} className="p-1.5 text-blue-500 bg-blue-50 hover:bg-blue-100 rounded-md transition" title="Update Data via CSV">
-                          <Edit size={16} />
-                        </button>
-                        <button onClick={() => handleDelete(cust.customer_id)} className="p-1.5 text-red-500 bg-red-50 hover:bg-red-100 rounded-md transition" title="Delete Customer">
+                        {/* Tombol edit (pena) di sini sudah dihapus */}
+                        <button onClick={() => openDeleteSingleModal(cust.customer_id)} className="p-1.5 text-red-500 bg-red-50 hover:bg-red-100 rounded-md transition" title="Delete Customer">
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -159,7 +189,7 @@ export default function CustomerListPage() {
                   </tr>
                 ))
               ) : (
-                <tr><td colSpan={11} className="py-8 text-center text-gray-400">Tidak ada data pelanggan yang cocok dengan filter.</td></tr>
+                <tr><td colSpan={11} className="py-8 text-center text-gray-400">No customer data matches the filter.</td></tr>
               )}
             </tbody>
           </table>
@@ -193,6 +223,46 @@ export default function CustomerListPage() {
           </div>
         )}
       </div>
+
+      {/* MODAL POP-UP KUSTOM */}
+      {modalType && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm transition-opacity">
+          <div className="bg-white rounded-xl shadow-xl border border-gray-100 max-w-md w-full p-6 m-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-red-50 rounded-full text-red-600 flex-shrink-0">
+                <AlertTriangle size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">
+                  {modalType === 'delete_all' ? 'Delete All Data?' : 'Delete Customer?'}
+                </h3>
+                <p className="text-sm text-gray-500 mt-2 leading-relaxed">
+                  {modalType === 'delete_all' ? (
+                    <>WARNING: Are you sure you want to delete <span className="font-semibold text-gray-700">All</span> customer data? This action cannot be undone.</>
+                  ) : (
+                    <>Are you sure you want to delete customer with ID <span className="font-semibold text-gray-800">{selectedCustomerId}</span>?</>
+                  )}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={closeModal}
+                className="px-4 py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmAction}
+                className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 active:bg-red-800 transition shadow-sm"
+              >
+                {modalType === 'delete_all' ? 'Yes, Delete All' : 'Yes, Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
