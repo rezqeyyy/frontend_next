@@ -18,7 +18,8 @@ export function UploadRequirements() {
       </ul>
 
       <a 
-        href="#" 
+        href="/assets/Template_CSV.csv" 
+        download="Template_CSV"
         className="inline-flex items-center gap-2 text-[#8b5cf6] hover:text-[#7c3aed] font-medium text-[14px] transition-colors mt-2"
       >
         <Download size={16} /> Download Sample CSV Template

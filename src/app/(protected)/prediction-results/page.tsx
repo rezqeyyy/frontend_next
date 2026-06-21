@@ -203,7 +203,7 @@ export default function PredictionResultsPage() {
 
       {/* RENDER MODAL DI SINI */}
       <CustomerDetailModal 
-        isOpen={isModalOpen} 
+        isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)} 
         customer={selectedCustomer} 
       />
