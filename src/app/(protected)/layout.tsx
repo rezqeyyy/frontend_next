@@ -33,6 +33,7 @@ export default async function ProtectedLayout({
   return (
     <div className="flex h-screen overflow-hidden bg-[#F8F9FB]">
       <Sidebar />
+      {/* Kembali polos seperti semula */}
       <main className="flex-1 h-screen overflow-y-auto">
         {children}
       </main>

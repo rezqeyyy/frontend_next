@@ -37,8 +37,9 @@ export default function UploadCsvPage() {
   };
 
   return (
-    <div className="p-4 pt-24 sm:p-6 sm:pt-28 max-w-[1000px] mx-auto w-full">
-      <header className="mb-8">
+    <div className="p-4 sm:p-6 max-w-[1000px] mx-auto w-full">
+    
+      <header className="mb-8 pt-24 lg:pt-0">
         <h1 className="text-[28px] font-bold text-gray-900 tracking-tight mb-2">Upload Customer Data</h1>
         <p className="text-gray-500 text-[15px]">Manage your customer datasets</p>
       </header>

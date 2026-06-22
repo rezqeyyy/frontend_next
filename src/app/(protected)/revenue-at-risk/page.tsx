@@ -42,10 +42,14 @@ export default function RevenueAtRiskPage() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8 font-sans text-gray-800">
-      {/* Header */}
-      <header className="mb-8">
-        <h1 className="text-[22px] md:text-[28px] font-bold text-gray-900 leading-tight">Revenue at Risk</h1>
-        <p className="text-gray-500 text-sm mt-1">Track and protect your revenue from customer churn</p>
+      {/* Ubah xl:pt-0 menjadi lg:pt-0 atau md:pt-0 */}
+      <header className="mb-8 pt-20 lg:pt-0">
+        <h1 className="text-[22px] md:text-[28px] font-bold text-gray-900 leading-tight">
+          Revenue at Risk
+        </h1>
+        <p className="text-gray-500 text-sm mt-1">
+          Track and protect your revenue from customer churn
+        </p>
       </header>
 
       {/* Grid Component untuk Metric Top Cards */}

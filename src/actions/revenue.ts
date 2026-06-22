@@ -26,7 +26,7 @@ function formatAccountAge(subscriptionAge: number): string {
   const m = Math.max(0, Math.round(subscriptionAge || 0));
   if (m < 12) return `${m} months`;
   const years = m / 12;
-  return years >= 2 ? `${years.toFixed(1)} years` : `${m} months`;
+  return years >= 2 ? `${years.toFixed(1)} day` : `${m} months`;
 }
 
 function deriveChurnFactors(c: any, avgs: Record<string, number>): string[] {

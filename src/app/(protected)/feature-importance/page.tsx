@@ -94,10 +94,12 @@ export default function FeatureImportancePage() {
     : DEFAULT_FEATURE_DATA;
 
   return (
-    <div className="p-4 pt-20 sm:p-6 lg:p-8 max-w-[1400px] mx-auto text-gray-800">
+    // PENTING: pt-20 dihapus dari sini
+    <div className="p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto text-gray-800">
       
       {/* HEADER */}
-      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
+      {/* PENTING: pt-20 dan lg:pt-0 dipindahkan ke sini */}
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4 pt-20 lg:pt-0">
         <div>
           <h1 className="text-[22px] md:text-[28px] font-bold text-gray-900 leading-tight">
             Feature Importance

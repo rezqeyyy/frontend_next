@@ -54,7 +54,7 @@ export default function HighImpactCustomersSection({ customers }: { customers: C
                   <p className="text-xl font-bold text-red-600">{customer.potentialLoss}</p>
                 </div>
                 <div className="bg-white border border-gray-200 rounded-xl p-4">
-                  <p className="text-xs text-gray-500 mb-1">Account Age</p>
+                  <p className="text-xs text-gray-500 mb-1">Account Day</p>
                   <p className="text-xl font-bold text-gray-900">{customer.accountAge}</p>
                 </div>
               </div>
@@ -70,7 +70,7 @@ export default function HighImpactCustomersSection({ customers }: { customers: C
                 </div>
               </div>
 
-              <div className="flex flex-wrap justify-between items-center gap-4 pt-2">
+              {/*<div className="flex flex-wrap justify-between items-center gap-4 pt-2">
                 <div className="flex gap-3">
                   <button className="px-5 py-2 border border-red-500 text-red-600 text-sm font-semibold rounded-lg hover:bg-red-50 transition-colors">Call Now</button>
                   <button className="px-5 py-2 border border-indigo-500 text-indigo-600 text-sm font-semibold rounded-lg hover:bg-indigo-50 transition-colors">Special Offer</button>
@@ -78,7 +78,7 @@ export default function HighImpactCustomersSection({ customers }: { customers: C
                 <button className="flex items-center gap-2 px-5 py-2 bg-[#e6ebff] text-indigo-900 text-sm font-semibold rounded-lg hover:bg-indigo-100 transition-colors">
                   View Full Profile <ArrowRight size={16} />
                 </button>
-              </div>
+              </div>*/}
             </div>
           );
         })}
